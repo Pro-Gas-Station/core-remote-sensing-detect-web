@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.ico?v=2" sizes="32x32">
+    <link rel="icon" href="/static/favicon.png?v=2" type="image/png" sizes="32x32">
+    <title>登录 - 遥感影像目标检测系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.1/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.1/dist/index.css">
+    <link rel="stylesheet" href="/static/iconfont/iconfont.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+            background: #f4f4f4;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* 顶部栏 */
+        .site-header {
+            background: #e4393c;
+            height: 72px;
+        }
+
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+
+        .site-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .logo-icon-wrap {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(145deg, #ff6b6b 0%, #ee5a24 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(238, 90, 36, 0.35), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .logo-icon-wrap .iconfont {
+            font-size: 22px;
+            color: #fff;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+        }
+
+        .logo-text {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.28);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(255,255,255,0.92);
+            font-size: 14px;
+        }
+
+        .header-right .iconfont {
+            font-size: 15px;
+        }
+
+        /* 主区域 */
+        .login-main {
+            padding: 36px 20px 48px;
+        }
+
+        .login-panel {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            background: #fff;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            border-radius: 4px;
+            overflow: hidden;
+            min-height: 480px;
+        }
+
+        /* 左侧宣传 */
+        .panel-banner {
+            width: 520px;
+            flex-shrink: 0;
+            background: url('/images/login-hero.jpg?v=5') center center / cover no-repeat;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 36px;
+        }
+
+        .panel-banner::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0,30,60,0.1) 0%, rgba(0,30,60,0.55) 100%);
+        }
+
+        .banner-top {
+            position: absolute;
+            top: 32px;
+            left: 36px;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            font-size: 13px;
+            background: rgba(255,255,255,0.12);
+            padding: 6px 14px 6px 8px;
+            border-radius: 20px;
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.18);
+        }
+
+        .banner-top .icon-badge {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, #43e97b 0%, #38f9d7 100%);
+            box-shadow: 0 3px 10px rgba(56, 249, 215, 0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+
+        .banner-top .icon-badge .iconfont {
+            font-size: 13px;
+            color: #fff;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+        }
+
+        .banner-caption {
+            position: relative;
+            z-index: 1;
+            color: #fff;
+        }
+
+        .banner-caption h2 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-shadow: 0 3px 14px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
+        }
+
+        .banner-caption p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 24px;
+        }
+
+        .banner-features {
+            display: flex;
+            gap: 14px;
+        }
+
+        .banner-feat {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(4px);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .banner-feat:hover {
+            background: rgba(255,255,255,0.16);
+            transform: translateY(-2px);
+        }
+
+        /* 渐变图标容器 + 阴影 */
+        .feat-icon-wrap {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+        }
+
+        .feat-icon-wrap::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 50%);
+            pointer-events: none;
+        }
+
+        .feat-icon-wrap .iconfont {
+            font-size: 18px;
+            color: #fff;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
+        }
+
+        .feat-icon-upload {
+            background: linear-gradient(145deg, #36d1dc 0%, #5b86e5 100%);
+            box-shadow: 0 6px 18px rgba(54, 209, 220, 0.4);
+        }
+
+        .feat-icon-target {
+            background: linear-gradient(145deg, #f7971e 0%, #ffd200 100%);
+            box-shadow: 0 6px 18px rgba(247, 151, 30, 0.4);
+        }
+
+        .feat-icon-data {
+            background: linear-gradient(145deg, #a855f7 0%, #ec4899 100%);
+            box-shadow: 0 6px 18px rgba(168, 85, 247, 0.4);
+        }
+
+        /* 右侧表单 */
+        .panel-form {
+            flex: 1;
+            padding: 32px 40px 28px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        .form-head .icon-head {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, #e4393c 0%, #ff6b6b 100%);
+            box-shadow: 0 4px 12px rgba(228, 57, 60, 0.3);
+        }
+
+        .form-head .icon-head .iconfont {
+            font-size: 18px;
+            color: #fff;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+        }
+
+        .form-head h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .form-head span {
+            font-size: 11px;
+            color: #bbb;
+            margin-left: 4px;
+            font-weight: 400;
+        }
+
+        .field-group {
+            margin-bottom: 16px;
+        }
+
+        .input-wrap {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ddd;
+            height: 44px;
+            transition: border-color 0.2s;
+            background: #fff;
+        }
+
+        .input-wrap:focus-within {
+            border-color: #e4393c;
+        }
+
+        .input-icon {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+            border-right: 1px solid #eee;
+            flex-shrink: 0;
+        }
+
+        .input-icon .iconfont {
+            font-size: 17px;
+            background: linear-gradient(145deg, #666 0%, #999 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.08));
+        }
+
+        .input-wrap:focus-within .input-icon {
+            background: linear-gradient(180deg, #fff5f5 0%, #ffecec 100%);
+        }
+
+        .input-wrap:focus-within .input-icon .iconfont {
+            background: linear-gradient(145deg, #e4393c 0%, #ff7875 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .field-input {
+            flex: 1;
+            height: 42px;
+            border: none;
+            padding: 0 12px;
+            font-size: 14px;
+            outline: none;
+            background: transparent;
+        }
+
+        .btn-login {
+            width: 100%;
+            height: 44px;
+            margin-top: 6px;
+            border: none;
+            background: #e4393c;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-login:hover {
+            background: #c81623;
+        }
+
+        .btn-login:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-login .iconfont {
+            font-size: 16px;
+        }
+
+        .form-links {
+            margin-top: 16px;
+            font-size: 12px;
+            color: #999;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .link-text {
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .link-text:hover {
+            color: #e4393c;
+        }
+
+        .link-text .iconfont {
+            font-size: 12px;
+        }
+
+        .help-text {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .help-text .iconfont {
+            font-size: 13px;
+        }
+
+        .demo-tip {
+            margin-top: auto;
+            padding: 14px 16px;
+            background: #fafafa;
+            border: 1px dashed #e8e8e8;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .demo-tip .icon-tip {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, #e4393c 0%, #ff7875 100%);
+            box-shadow: 0 2px 6px rgba(228, 57, 60, 0.25);
+        }
+
+        .btn-sms {
+            border: 1px solid #e4393c;
+            background: #fff;
+            color: #e4393c;
+            padding: 0 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .btn-sms:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .demo-tip .icon-tip .iconfont {
+            font-size: 11px;
+            color: #fff;
+        }
+
+        .site-footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        @media (max-width: 900px) {
+            .login-panel { flex-direction: column; min-height: auto; }
+            .panel-banner { width: 100%; min-height: 220px; }
+            .banner-features { flex-wrap: wrap; }
+            .panel-form { padding: 24px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header class="site-header">
+            <div class="header-inner">
+                <a class="site-logo" href="/">
+                    <div class="logo-icon-wrap">
+                        <i class="iconfont icon-weixing"></i>
+                    </div>
+                    <span class="logo-text">遥感检测</span>
+                </a>
+                <div class="header-right">
+                    <i class="iconfont icon-yonghu"></i>
+                    <span>欢迎登录</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="login-main">
+            <div class="login-panel">
+                <div class="panel-banner">
+                    <div class="banner-top">
+                        <div class="icon-badge"><i class="iconfont icon-anquan"></i></div>
+                        <span>安全可靠的检测平台</span>
+                    </div>
+                    <div class="banner-caption">
+                        <h2>遥感影像目标检测</h2>
+                        <p>上传影像，一键识别物体目标</p>
+                        <div class="banner-features">
+                            <div class="banner-feat">
+                                <div class="feat-icon-wrap feat-icon-upload"><i class="iconfont icon-shangchuan"></i></div>
+                                <span>影像上传</span>
+                            </div>
+                            <div class="banner-feat">
+                                <div class="feat-icon-wrap feat-icon-target"><i class="iconfont icon-mubiao"></i></div>
+                                <span>目标定位</span>
+                            </div>
+                            <div class="banner-feat">
+                                <div class="feat-icon-wrap feat-icon-data"><i class="iconfont icon-shuju"></i></div>
+                                <span>结果分析</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-form">
+                    <div class="form-head">
+                        <div class="icon-head"><i class="iconfont" :class="isRegister ? 'icon-zhuce' : 'icon-denglu'"></i></div>
+                        <h3>{{ isReset ? '找回密码' : (isRegister ? '用户注册' : '账户登录') }}<span>{{ isReset ? 'RESET' : (isRegister ? 'REGISTER' : 'LOGIN') }}</span></h3>
+                    </div>
+
+                    <template v-if="!isRegister && !isReset">
+                        <div class="field-group">
+                            <div class="input-wrap">
+                                <div class="input-icon"><i class="iconfont icon-yonghu"></i></div>
+                                <input class="field-input" v-model="loginForm.username" placeholder="请输入用户名" @keyup.enter="handleLogin" />
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <div class="input-wrap">
+                                <div class="input-icon"><i class="iconfont icon-mima"></i></div>
+                                <input class="field-input" type="password" v-model="loginForm.password" placeholder="请输入密码" @keyup.enter="handleLogin" />
+                            </div>
+                        </div>
+                        <button class="btn-login" :disabled="loginLoading" @click="handleLogin">
+                            <i class="iconfont icon-denglu"></i>
+                            <span>{{ loginLoading ? '登录中...' : '登 录' }}</span>
+                        </button>
+                    </template>
+
+                    <template v-else-if="isRegister">
+                        <div class="field-group">
+                            <div class="input-wrap">
+                                <span style="padding:0 12px;font-size:13px;color:#666;">账户类型</span>
+                                <span style="padding:12px;font-size:14px;color:#333;font-weight:600;">普通用户</span>
+                            </div>
+                        </div>
+                        <div class="field-group" style="display:flex;gap:8px;margin-bottom:8px;">
+                            <button type="button" class="btn-sms" :style="registerType==='phone'?'background:#e4393c;color:#fff':''" @click="registerType='phone'">手机号注册</button>
+                            <button type="button" class="btn-sms" :style="registerType==='email'?'background:#e4393c;color:#fff':''" @click="registerType='email'">邮箱注册</button>
+                        </div>
+                        <template v-if="registerType==='phone'">
+                            <div class="field-group">
+                                <div class="input-wrap">
+                                    <input class="field-input" v-model="registerForm.phone" placeholder="手机号（必填）" />
+                                </div>
+                            </div>
+                            <div class="field-group" style="display:flex;gap:8px;">
+                                <div class="input-wrap" style="flex:1;">
+                                    <input class="field-input" v-model="registerForm.smsCode" placeholder="短信验证码" />
+                                </div>
+                                <button class="btn-sms" :disabled="codeCdDisabled('reg_sms')" @click="sendRegisterSms">{{ codeCdLabel('reg_sms') }}</button>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <div class="field-group">
+                                <div class="input-wrap">
+                                    <input class="field-input" v-model="registerForm.email" placeholder="邮箱（必填）" />
+                                </div>
+                            </div>
+                            <div class="field-group" style="display:flex;gap:8px;">
+                                <div class="input-wrap" style="flex:1;">
+                                    <input class="field-input" v-model="registerForm.emailCode" placeholder="邮箱验证码" />
+                                </div>
+                                <button class="btn-sms" :disabled="codeCdDisabled('reg_email')" @click="sendRegisterEmail">{{ codeCdLabel('reg_email') }}</button>
+                            </div>
+                        </template>
+                        <div class="field-group">
+                            <div class="input-wrap">
+                                <input class="field-input" v-model="registerForm.username" placeholder="用户名（至少3位）" />
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <div class="input-wrap">
+                                <input class="field-input" type="password" v-model="registerForm.password" placeholder="密码（至少6位）" @keyup.enter="handleRegister" />
+                            </div>
+                        </div>
+                        <button class="btn-login" :disabled="registerLoading" @click="handleRegister">
+                            <i class="iconfont icon-zhuce"></i>
+                            <span>{{ registerLoading ? '注册中...' : '注 册' }}</span>
+                        </button>
+                    </template>
+
+                    <template v-else-if="isReset">
+                        <div class="field-group" style="display:flex;gap:8px;margin-bottom:8px;">
+                            <button type="button" class="btn-sms" :style="resetType==='phone'?'background:#e4393c;color:#fff':''" @click="resetType='phone'">手机找回</button>
+                            <button type="button" class="btn-sms" :style="resetType==='email'?'background:#e4393c;color:#fff':''" @click="resetType='email'">邮箱找回</button>
+                        </div>
+                        <template v-if="resetType==='phone'">
+                            <div class="field-group">
+                                <div class="input-wrap">
+                                    <input class="field-input" v-model="resetForm.phone" placeholder="已绑定的手机号" />
+                                </div>
+                            </div>
+                            <div class="field-group" style="display:flex;gap:8px;">
+                                <div class="input-wrap" style="flex:1;">
+                                    <input class="field-input" v-model="resetForm.smsCode" placeholder="短信验证码" />
+                                </div>
+                                <button class="btn-sms" :disabled="codeCdDisabled('reset_sms')" @click="sendResetSms">{{ codeCdLabel('reset_sms') }}</button>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <div class="field-group">
+                                <div class="input-wrap">
+                                    <input class="field-input" v-model="resetForm.email" placeholder="已绑定的邮箱" />
+                                </div>
+                            </div>
+                            <div class="field-group" style="display:flex;gap:8px;">
+                                <div class="input-wrap" style="flex:1;">
+                                    <input class="field-input" v-model="resetForm.emailCode" placeholder="邮箱验证码" />
+                                </div>
+                                <button class="btn-sms" :disabled="codeCdDisabled('reset_email')" @click="sendResetEmail">{{ codeCdLabel('reset_email') }}</button>
+                            </div>
+                        </template>
+                        <div class="field-group">
+                            <div class="input-wrap">
+                                <input class="field-input" type="password" v-model="resetForm.newPassword" placeholder="新密码（至少6位）" />
+                            </div>
+                        </div>
+                        <button class="btn-login" :disabled="resetLoading" @click="handleReset">
+                            <span>{{ resetLoading ? '提交中...' : '重置密码' }}</span>
+                        </button>
+                    </template>
+
+                    <div class="form-links">
+                        <span class="link-text" @click="toggleMode">
+                            <i class="iconfont" :class="isRegister ? 'icon-denglu' : 'icon-zhuce'"></i>
+                            {{ isRegister ? '已有账号，去登录' : '注册新账号' }}
+                        </span>
+                        <span class="help-text" @click="showReset" style="cursor:pointer;">
+                            <i class="iconfont icon-bangzhu"></i>
+                            {{ isReset ? '返回登录' : '忘记密码' }}
+                        </span>
+                    </div>
+
+                    <div class="demo-tip">
+                        <span class="icon-tip"><i class="iconfont icon-anquan"></i></span>
+                        <span>演示账号 admin / 123456</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="site-footer">遥感影像目标检测系统</footer>
+    </div>
+
+    <script src="/static/js/app-core.js?v=16"></script>
+    <script>
+        if (typeof UserSession === 'undefined') {
+            window.AppApi = {
+                paths: { login: '/api/user/login', register: '/api/user/register' },
+                url: function (p) { return p; }
+            };
+            window.UserSession = {
+                KEY: 'rs_detect_session',
+                save: function (u) { localStorage.setItem(this.KEY, JSON.stringify(u)); },
+                read: function () { var r = localStorage.getItem(this.KEY); return r ? JSON.parse(r) : null; },
+                clear: function () { localStorage.removeItem(this.KEY); },
+                loggedIn: function () { return this.read() !== null; }
+            };
+        }
+
+        const { createApp } = Vue;
+        const { ElMessage } = ElementPlus;
+
+        createApp({
+            data() {
+                return {
+                    isRegister: false,
+                    isReset: false,
+                    loginLoading: false,
+                    registerLoading: false,
+                    resetLoading: false,
+                    codeCd: {},
+                    registerType: 'phone',
+                    resetType: 'phone',
+                    loginForm: { username: '', password: '' },
+                    registerForm: { username: '', password: '', phone: '', smsCode: '', email: '', emailCode: '' },
+                    resetForm: { phone: '', smsCode: '', email: '', emailCode: '', newPassword: '' }
+                };
+            },
+            mounted() {
+                if (UserSession.loggedIn()) {
+                    window.location.href = '/detect.html';
+                }
+            },
+            methods: {
+                codeCdDisabled(key) {
+                    if (key && key.indexOf('email') >= 0) {
+                        return CodeCooldown.disabled(key);
+                    }
+                    return (this.codeCd[key] || 0) > 0;
+                },
+                codeCdLabel(key) {
+                    if (key && key.indexOf('email') >= 0) {
+                        return CodeCooldown.label(key);
+                    }
+                    const n = this.codeCd[key] || 0;
+                    return n > 0 ? `${n}秒后重试` : '获取验证码';
+                },
+                startCodeCd(key, seconds) {
+                    seconds = seconds || (window.CODE_CD_SECONDS || 60);
+                    if (this.codeCdDisabled(key)) return;
+                    this.codeCd[key] = seconds;
+                    if (this._codeCdTimers && this._codeCdTimers[key]) {
+                        clearInterval(this._codeCdTimers[key]);
+                    }
+                    if (!this._codeCdTimers) this._codeCdTimers = {};
+                    this._codeCdTimers[key] = setInterval(() => {
+                        this.codeCd[key]--;
+                        if (this.codeCd[key] <= 0) {
+                            this.codeCd[key] = 0;
+                            clearInterval(this._codeCdTimers[key]);
+                        }
+                    }, 1000);
+                },
+                onCodeSendResult(key, d) {
+                    if (key && key.indexOf('email') >= 0) {
+                        CodeCooldown.applyResponse(key, d);
+                        return;
+                    }
+                    if (d && d.code === 200) {
+                        this.startCodeCd(key);
+                        return;
+                    }
+                    if (d && d.code === 429) {
+                        const m = (d.message || '').match(/(\d+)\s*秒/);
+                        this.startCodeCd(key, m ? parseInt(m[1], 10) : (window.CODE_CD_SECONDS || 60));
+                    }
+                },
+                toggleMode() {
+                    this.isRegister = !this.isRegister;
+                    this.isReset = false;
+                    this.loginForm = { username: '', password: '' };
+                    this.registerForm = { username: '', password: '', phone: '', smsCode: '', email: '', emailCode: '' };
+                },
+                async sendRegisterEmail() {
+                    if (this.codeCdDisabled('reg_email')) return;
+                    if (!this.registerForm.email) {
+                        ElMessage.warning('请输入邮箱');
+                        return;
+                    }
+                    CodeCooldown.setSending('reg_email', true);
+                    try {
+                        const res = await fetch(AppApi.url(AppApi.paths.emailSend || '/api/email/send'), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: this.registerForm.email, purpose: 'register', scene: 'new' })
+                        });
+                        const d = await res.json();
+                        this.onCodeSendResult('reg_email', d);
+                        if (d.code === 200) ElMessage.success(d.message || '验证码已发送');
+                        else ElMessage.error(d.message || '发送失败');
+                    } catch (e) {
+                        ElMessage.error('发送失败');
+                    } finally {
+                        CodeCooldown.setSending('reg_email', false);
+                    }
+                },
+                async sendResetEmail() {
+                    if (this.codeCdDisabled('reset_email')) return;
+                    if (!this.resetForm.email) {
+                        ElMessage.warning('请输入邮箱');
+                        return;
+                    }
+                    CodeCooldown.setSending('reset_email', true);
+                    try {
+                        const res = await fetch(AppApi.url('/api/email/send'), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: this.resetForm.email, purpose: 'reset', scene: 'new' })
+                        });
+                        const d = await res.json();
+                        this.onCodeSendResult('reset_email', d);
+                        if (d.code === 200) ElMessage.success(d.message || '验证码已发送');
+                        else ElMessage.error(d.message || '发送失败');
+                    } catch (e) {
+                        ElMessage.error('发送失败');
+                    } finally {
+                        CodeCooldown.setSending('reset_email', false);
+                    }
+                },
+                showReset() {
+                    if (this.isReset) {
+                        this.isReset = false;
+                        return;
+                    }
+                    this.isReset = true;
+                    this.isRegister = false;
+                },
+                async sendRegisterSms() {
+                    if (this.codeCdDisabled('reg_sms')) return;
+                    if (!this.registerForm.phone) {
+                        ElMessage.warning('请输入手机号');
+                        return;
+                    }
+                    try {
+                        const res = await fetch(AppApi.url(AppApi.paths.smsSend || '/api/sms/send'), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ phone: this.registerForm.phone, purpose: 'register', scene: 'new' })
+                        });
+                        const d = await res.json();
+                        this.onCodeSendResult('reg_sms', d);
+                        if (d.code === 200) ElMessage.success(d.message || '验证码已发送至您的手机');
+                        else ElMessage.error(d.message || '发送失败');
+                    } catch (e) {
+                        ElMessage.error('发送失败');
+                    }
+                },
+                async sendResetSms() {
+                    if (this.codeCdDisabled('reset_sms')) return;
+                    if (!this.resetForm.phone) {
+                        ElMessage.warning('请输入手机号');
+                        return;
+                    }
+                    try {
+                        const res = await fetch(AppApi.url('/api/sms/send'), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ phone: this.resetForm.phone, purpose: 'reset', scene: 'new' })
+                        });
+                        const d = await res.json();
+                        this.onCodeSendResult('reset_sms', d);
+                        if (d.code === 200) ElMessage.success(d.message || '验证码已发送至您的手机');
+                        else ElMessage.error(d.message || '发送失败');
+                    } catch (e) {
+                        ElMessage.error('发送失败');
+                    }
+                },
+                async handleReset() {
+                    this.resetLoading = true;
+                    try {
+                        var url = this.resetType === 'email' ? AppApi.url('/api/user/password/reset-email') : AppApi.url('/api/user/password/reset');
+                        var body = this.resetType === 'email'
+                            ? { email: this.resetForm.email, emailCode: this.resetForm.emailCode, newPassword: this.resetForm.newPassword }
+                            : this.resetForm;
+                        if (this.resetType === 'email') {
+                            if (!this.resetForm.email || !this.resetForm.emailCode || !this.resetForm.newPassword) {
+                                ElMessage.warning('请填写完整信息'); this.resetLoading = false; return;
+                            }
+                        } else if (!this.resetForm.phone || !this.resetForm.smsCode || !this.resetForm.newPassword) {
+                            ElMessage.warning('请填写完整信息'); this.resetLoading = false; return;
+                        }
+                        const res = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body)
+                        });
+                        const d = await res.json();
+                        if (d.code === 200) {
+                            ElMessage.success(d.message);
+                            this.isReset = false;
+                        } else ElMessage.error(d.message);
+                    } catch (e) {
+                        ElMessage.error('请求失败');
+                    } finally {
+                        this.resetLoading = false;
+                    }
+                },
+                async handleLogin() {
+                    if (!this.loginForm.username || !this.loginForm.password) {
+                        ElMessage.warning('请输入用户名和密码');
+                        return;
+                    }
+                    this.loginLoading = true;
+                    try {
+                        const res = await fetch(AppApi.url(AppApi.paths.login), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.loginForm)
+                        });
+                        const result = await res.json();
+                        if (result.code === 200) {
+                            UserSession.save(result.data.user);
+                            window.location.href = '/detect.html';
+                        } else {
+                            ElMessage.error(result.message || '登录失败');
+                        }
+                    } catch (e) {
+                        ElMessage.error('无法连接服务，请先运行 python app.py');
+                    } finally {
+                        this.loginLoading = false;
+                    }
+                },
+                async handleRegister() {
+                    if (!this.registerForm.username || !this.registerForm.password) {
+                        ElMessage.warning('请输入用户名和密码');
+                        return;
+                    }
+                    if (this.registerType === 'phone') {
+                        if (!this.registerForm.phone || !this.registerForm.smsCode) {
+                            ElMessage.warning('请完成手机号短信验证'); return;
+                        }
+                    } else {
+                        if (!this.registerForm.email || !this.registerForm.emailCode) {
+                            ElMessage.warning('请完成邮箱验证'); return;
+                        }
+                    }
+                    if (this.registerForm.username.length < 3 || this.registerForm.password.length < 6) {
+                        ElMessage.warning('用户名至少3位，密码至少6位');
+                        return;
+                    }
+                    this.registerLoading = true;
+                    try {
+                        const res = await fetch(AppApi.url(AppApi.paths.register), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                username: this.registerForm.username,
+                                password: this.registerForm.password,
+                                registerType: this.registerType,
+                                phone: this.registerForm.phone,
+                                smsCode: this.registerForm.smsCode,
+                                email: this.registerForm.email,
+                                emailCode: this.registerForm.emailCode
+                            })
+                        });
+                        const result = await res.json();
+                        if (result.code === 200) {
+                            ElMessage.success('注册成功');
+                            this.isRegister = false;
+                            this.loginForm.username = this.registerForm.username;
+                            this.registerForm = { username: '', password: '', phone: '', smsCode: '', email: '', emailCode: '' };
+                        } else {
+                            ElMessage.error(result.message || '注册失败');
+                        }
+                    } catch (e) {
+                        ElMessage.error('无法连接服务');
+                    } finally {
+                        this.registerLoading = false;
+                    }
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

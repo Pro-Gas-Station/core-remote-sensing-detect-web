@@ -1,0 +1,12 @@
+{
+  "admin": {
+    "password": "123456",
+    "realName": "管理员",
+    "createTime": "2025-07-25T19:00:09.665121"
+  },
+  "user": {
+    "password": "123456",
+    "realName": "普通用户",
+    "createTime": "2025-07-25T19:00:09.665125"
+  }
+}

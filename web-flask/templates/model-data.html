@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.ico?v=2" sizes="32x32">
+    <link rel="icon" href="/static/favicon.png?v=2" type="image/png" sizes="32x32">
+    <title>模型数据 - 遥感影像目标检测系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.1/dist/index.full.js"></script>
+    <script src="https://unpkg.com/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.1/dist/index.css">
+    <link rel="stylesheet" href="/static/iconfont/iconfont.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/brand-header.css">
+    <style>
+        .site-header .header-action-btn {
+            background: rgba(255, 255, 255, 0.12) !important;
+            border: 1px solid rgba(255, 255, 255, 0.65) !important;
+            color: #fff !important;
+            font-size: 13px;
+        }
+        .site-header .header-action-btn:hover,
+        .site-header .header-action-btn:focus {
+            background: rgba(255, 255, 255, 0.22) !important;
+            border-color: #fff !important;
+            color: #fff !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="data-page">
+            <header class="site-header">
+                <div class="brand-block brand-header">
+                    <div class="brand-logo-link" style="cursor:default;">
+                        <div class="logo-icon-wrap">
+                            <i class="iconfont icon-shuju"></i>
+                        </div>
+                        <div class="brand-title-col">
+                            <div class="brand-name">{{ headerTitle }}</div>
+                            <div class="brand-slide-viewport">
+                                <div class="brand-slide-list">
+                                    <span>模型训练与评估数据</span>
+                                    <span>精度 · 召回率 · mAP 指标</span>
+                                    <span>各类别检测性能统计</span>
+                                    <span>一键上传 · 快速查看结果</span>
+                                    <span>模型训练与评估数据</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-tools">
+                    <el-button class="header-action-btn" size="small" @click="closePage">关闭窗口</el-button>
+                </div>
+            </header>
+
+            <div class="page-content" style="flex:1;overflow:auto;">
+                <div v-if="loading" class="state-empty">数据加载中...</div>
+                <div v-else-if="errorMsg" class="state-empty">
+                    <div class="state-title">加载失败</div>
+                    <div class="state-desc">{{ errorMsg }}</div>
+                </div>
+
+                <!-- 训练数据 -->
+                <template v-if="pageType === 'training' && !loading && !errorMsg">
+                    <div v-if="trainRows.length" class="panel-card" style="margin-bottom:16px;">
+                        <div class="panel-head">损失曲线</div>
+                        <div class="panel-body">
+                            <div id="lossChart" class="chart-block"></div>
+                        </div>
+                    </div>
+                    <div v-if="trainRows.length" class="panel-card">
+                        <div class="panel-head">精度指标曲线</div>
+                        <div class="panel-body">
+                            <div id="accuracyChart" class="chart-block"></div>
+                        </div>
+                    </div>
+                    <div v-if="!trainRows.length" class="state-empty">暂无训练记录数据</div>
+                </template>
+
+                <!-- 验证数据 -->
+                <template v-if="pageType === 'validation' && !loading && !errorMsg && valData">
+                    <div v-if="valData.accuracy" class="panel-card" style="margin-bottom:16px;">
+                        <div class="panel-head">测试集整体指标</div>
+                        <div class="panel-body metric-panel">
+                            <div class="metric-row">
+                                <span>精度 Precision</span>
+                                <span class="metric-val">{{ formatPct(valData.accuracy.precision) }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span>召回率 Recall</span>
+                                <span class="metric-val">{{ formatPct(valData.accuracy.recall) }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span>mAP@0.5</span>
+                                <span class="metric-val">{{ formatPct(valData.accuracy.mAP50) }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span>mAP@0.5-0.95</span>
+                                <span class="metric-val">{{ formatPct(valData.accuracy.mAP50_95) }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span>测试图像数</span>
+                                <span class="metric-val">{{ valData.accuracy.images }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span>检测实例数</span>
+                                <span class="metric-val">{{ valData.accuracy.instances }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="valData.class_results && valData.class_results.length" class="panel-card" style="margin-bottom:16px;">
+                        <div class="panel-head">各类别指标</div>
+                        <div class="panel-body">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>类别</th>
+                                        <th>图像数</th>
+                                        <th>实例数</th>
+                                        <th>精度</th>
+                                        <th>召回率</th>
+                                        <th>mAP50</th>
+                                        <th>mAP50-95</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="row in valData.class_results" :key="row.class_name">
+                                        <td>{{ row.class_name }}</td>
+                                        <td>{{ row.images }}</td>
+                                        <td>{{ row.instances }}</td>
+                                        <td>{{ formatPct(row.precision, 1) }}</td>
+                                        <td>{{ formatPct(row.recall, 1) }}</td>
+                                        <td>{{ formatPct(row.mAP50, 1) }}</td>
+                                        <td>{{ formatPct(row.mAP50_95, 1) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="panel-card">
+                        <div class="panel-head">测试集样本图</div>
+                        <div class="panel-body">
+                            <div v-if="valData.images && valData.images.length" class="img-grid">
+                                <div v-for="img in valData.images" :key="img.name" class="img-cell">
+                                    <img :src="img.url" :alt="img.name" @click="showImage(img.url)" />
+                                    <div class="img-name">{{ img.name }}</div>
+                                </div>
+                            </div>
+                            <div v-else class="state-empty">暂无测试图片</div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- 消融/对比实验 -->
+                <template v-if="pageType === 'experiments' && !loading && !errorMsg && expData">
+                    <div class="panel-card" style="margin-bottom:16px;">
+                        <div class="panel-head">消融实验（Ablation Study）</div>
+                        <div class="panel-body">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>实验配置</th><th>Backbone</th><th>Neck</th><th>mAP@0.5</th><th>mAP@0.5:0.95</th><th>说明</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="row in expData.ablation" :key="row.name">
+                                        <td>{{ row.name }}</td>
+                                        <td>{{ row.backbone }}</td>
+                                        <td>{{ row.neck }}</td>
+                                        <td>{{ formatPct(row.map50, 1) }}</td>
+                                        <td>{{ formatPct(row.map50_95, 1) }}</td>
+                                        <td>{{ row.note }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="panel-card">
+                        <div class="panel-head">对比实验（Comparison with SOTA）</div>
+                        <div class="panel-body">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>模型</th><th>Precision</th><th>Recall</th><th>mAP@0.5</th><th>mAP@0.5:0.95</th><th>参数量</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="row in expData.comparison" :key="row.name">
+                                        <td>{{ row.name }}</td>
+                                        <td>{{ row.precision != null ? formatPct(row.precision, 1) : '—' }}</td>
+                                        <td>{{ row.recall != null ? formatPct(row.recall, 1) : '—' }}</td>
+                                        <td>{{ formatPct(row.map50, 1) }}</td>
+                                        <td>{{ formatPct(row.map50_95, 1) }}</td>
+                                        <td>{{ row.params }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </template>
+
+                <template v-if="pageType === 'experiments' && !loading && !errorMsg && !expData">
+                    <div class="state-empty">暂无实验数据</div>
+                </template>
+
+                <!-- 管理员：账号管理（SQLite） -->
+                <template v-if="pageType === 'admin' && !loading && !errorMsg">
+                    <div style="font-size:13px;color:#666;margin-bottom:12px;line-height:1.6;">
+                        数据来自 SQLite 数据库 <strong>data/app.db</strong>，共 <strong>{{ adminUsers.length }}</strong> 个账号。
+                        解绑手机/邮箱时须至少保留一项登录凭证；若需全部清除请直接注销用户。
+                    </div>
+                    <div class="panel-card">
+                        <div class="panel-head">全部用户</div>
+                        <div class="panel-body" style="overflow-x:auto;">
+                            <table class="data-table" v-if="adminUsers.length">
+                                <thead>
+                                    <tr>
+                                        <th>用户名</th>
+                                        <th>密码</th>
+                                        <th>角色</th>
+                                        <th>姓名</th>
+                                        <th>手机</th>
+                                        <th>邮箱</th>
+                                        <th>主题</th>
+                                        <th>注册时间</th>
+                                        <th style="min-width:200px;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="u in adminUsers" :key="u.username">
+                                        <td>{{ u.username }}</td>
+                                        <td>{{ u.password }}</td>
+                                        <td>{{ u.roleLabel }}</td>
+                                        <td>{{ u.realName || '—' }}</td>
+                                        <td>{{ u.phone || '未绑定' }}</td>
+                                        <td>{{ u.email || '未绑定' }}</td>
+                                        <td>{{ u.theme || 'default' }}</td>
+                                        <td>{{ formatDate(u.createdAt) }}</td>
+                                        <td>
+                                            <template v-if="u.username !== 'admin'">
+                                                <el-button size="small" link type="primary" @click="openAdminPwd(u)">改密</el-button>
+                                                <el-button size="small" link type="primary" @click="toggleUserRole(u)" v-if="u.role !== 'admin'">
+                                                    {{ u.role === 'member' ? '设为普通' : '设为会员' }}
+                                                </el-button>
+                                                <el-button size="small" link type="warning" @click="adminUnbindPhone(u)" v-if="u.phone">解绑手机</el-button>
+                                                <el-button size="small" link type="warning" @click="adminUnbindEmail(u)" v-if="u.email">解绑邮箱</el-button>
+                                                <el-button size="small" link type="danger" @click="adminDeleteUser(u)">注销</el-button>
+                                            </template>
+                                            <span v-else style="color:#999;">系统账号</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div v-else class="state-empty">数据库中暂无用户</div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <el-dialog v-model="previewOpen" title="图片预览" width="75%" center>
+            <div style="text-align:center;">
+                <img :src="previewUrl" style="max-width:100%;max-height:70vh;" alt="预览" />
+            </div>
+        </el-dialog>
+
+        <el-dialog v-model="adminPwdOpen" title="管理员修改密码" width="420px" center>
+            <p style="margin-bottom:12px;color:#666;">用户：<strong>{{ adminPwdUser.username }}</strong></p>
+            <el-input v-model="adminPwdNew" type="password" show-password placeholder="新密码（至少6位）"></el-input>
+            <template #footer>
+                <el-button @click="adminPwdOpen = false">取消</el-button>
+                <el-button type="primary" @click="submitAdminPwd">确定</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <script src="/static/js/app-core.js?v=16"></script>
+    <script>
+        var createApp = Vue.createApp;
+
+        function defaultExperimentsData() {
+            return {
+                ablation: [
+                    { name: '完整 YOLO12（基准）', backbone: 'C2f+注意力', neck: 'PAN-FPN', map50: 0.918, map50_95: 0.609, note: '本文方法' },
+                    { name: 'w/o 注意力模块', backbone: 'C2f', neck: 'PAN-FPN', map50: 0.886, map50_95: 0.581, note: '消融：去除注意力' },
+                    { name: 'w/o 多尺度融合', backbone: 'C2f+注意力', neck: '单尺度', map50: 0.870, map50_95: 0.568, note: '消融：去除 PAN-FPN' },
+                    { name: 'w/o 数据增强', backbone: 'C2f+注意力', neck: 'PAN-FPN', map50: 0.897, map50_95: 0.590, note: '消融：关闭 Mosaic 等' }
+                ],
+                comparison: [
+                    { name: 'Faster R-CNN', map50: 0.812, map50_95: 0.521, precision: 0.891, recall: 0.742, params: '41M' },
+                    { name: 'YOLOv8n', map50: 0.876, map50_95: 0.568, precision: 0.921, recall: 0.798, params: '3.2M' },
+                    { name: 'YOLOv8s', map50: 0.893, map50_95: 0.587, precision: 0.934, recall: 0.821, params: '11.2M' },
+                    { name: 'YOLO12（本文）', map50: 0.918, map50_95: 0.609, precision: 0.959, recall: 0.850, params: '9.8M' }
+                ]
+            };
+        }
+
+        createApp({
+            data: function () {
+                return {
+                    pageType: '',
+                    modelKey: '',
+                    loading: false,
+                    errorMsg: '',
+                    trainRows: [],
+                    valData: null,
+                    expData: null,
+                    adminUsers: [],
+                    adminPwdOpen: false,
+                    adminPwdUser: { username: '' },
+                    adminPwdNew: '',
+                    lossChart: null,
+                    accChart: null,
+                    previewOpen: false,
+                    previewUrl: ''
+                };
+            },
+            computed: {
+                headerTitle: function () {
+                    if (this.pageType === 'training') {
+                        return '训练过程数据';
+                    }
+                    if (this.pageType === 'validation') {
+                        return '测试集评估数据';
+                    }
+                    if (this.pageType === 'experiments') {
+                        return '消融与对比实验';
+                    }
+                    if (this.pageType === 'admin') {
+                        return '系统账号管理';
+                    }
+                    return '模型数据';
+                }
+            },
+            mounted: function () {
+                this.readQuery();
+                this.loadPageData();
+            },
+            beforeUnmount: function () {
+                this.destroyCharts();
+                window.removeEventListener('resize', this.onResize);
+            },
+            methods: {
+                readQuery: function () {
+                    var params = new URLSearchParams(window.location.search);
+                    this.pageType = params.get('type') || '';
+                    this.modelKey = params.get('model') || 'ready-model';
+                },
+                formatPct: function (val, digits) {
+                    var d = digits || 2;
+                    return (val * 100).toFixed(d) + '%';
+                },
+                formatDate: function (s) {
+                    if (!s) return '—';
+                    return String(s).slice(0, 19).replace('T', ' ');
+                },
+                loadPageData: function () {
+                    var self = this;
+                    if (!self.pageType) {
+                        self.errorMsg = '缺少 type 参数，请从检测页导航栏进入';
+                        return;
+                    }
+                    if (self.pageType === 'admin') {
+                        if (!UserSession.loggedIn()) {
+                            self.errorMsg = '请先登录后再查看账号管理';
+                            return;
+                        }
+                        var cu = UserSession.read() || {};
+                        if (!cu.isAdmin && cu.role !== 'admin' && cu.username !== 'admin') {
+                            self.errorMsg = '仅管理员可查看，请使用 admin 账号登录';
+                            return;
+                        }
+                        self.loading = true;
+                        self.errorMsg = '';
+                        AppApi.fetchJson(AppApi.paths.adminUsers)
+                            .then(function (d) {
+                                if (d.code === 200) {
+                                    self.adminUsers = (d.data && d.data.items) || [];
+                                } else {
+                                    self.errorMsg = d.message || '加载失败';
+                                    if (d.code === 404 || (d.message && d.message.indexOf('404') >= 0)) {
+                                        self.errorMsg += '。请双击 start.bat 重启 Flask 服务。';
+                                    }
+                                }
+                            })
+                            .catch(function (err) {
+                                self.errorMsg = '请求异常：' + err.message;
+                            })
+                            .finally(function () {
+                                self.loading = false;
+                            });
+                        return;
+                    }
+                    if (!self.modelKey) {
+                        self.modelKey = 'ready-model';
+                    }
+                    self.loading = true;
+                    self.errorMsg = '';
+                    if (self.pageType === 'experiments') {
+                        self.loadExperiments();
+                        return;
+                    }
+                    var url = AppApi.url(AppApi.paths.modelData) + '?type=' + encodeURIComponent(self.pageType) + '&model=' + encodeURIComponent(self.modelKey);
+                    fetch(url)
+                        .then(function (res) { return res.json(); })
+                        .then(function (data) {
+                            if (data.code !== 200) {
+                                self.errorMsg = data.message || '数据获取失败';
+                                return;
+                            }
+                            if (self.pageType === 'training') {
+                                self.trainRows = data.data || [];
+                                self.$nextTick(function () {
+                                    setTimeout(function () { self.buildCharts(); }, 80);
+                                });
+                            } else {
+                                self.valData = data.data;
+                            }
+                        })
+                        .catch(function (err) {
+                            self.errorMsg = '请求异常：' + err.message;
+                        })
+                        .finally(function () {
+                            self.loading = false;
+                        });
+                },
+                loadExperiments: function () {
+                    var self = this;
+                    var urls = [
+                        AppApi.url(AppApi.paths.experiments || '/api/experiments') + '?model=' + encodeURIComponent(self.modelKey),
+                        AppApi.url(AppApi.paths.modelData) + '?type=experiments&model=' + encodeURIComponent(self.modelKey)
+                    ];
+                    function tryNext(i) {
+                        if (i >= urls.length) {
+                            self.expData = defaultExperimentsData();
+                            self.errorMsg = '';
+                            self.loading = false;
+                            return;
+                        }
+                        fetch(urls[i])
+                            .then(function (res) { return res.json(); })
+                            .then(function (data) {
+                                if (data.code === 200 && data.data) {
+                                    self.expData = data.data;
+                                    self.errorMsg = '';
+                                    self.loading = false;
+                                } else {
+                                    tryNext(i + 1);
+                                }
+                            })
+                            .catch(function () { tryNext(i + 1); });
+                    }
+                    tryNext(0);
+                },
+                buildCharts: function () {
+                    if (!this.trainRows.length) {
+                        return;
+                    }
+                    this.drawLossChart();
+                    this.drawAccChart();
+                    var self = this;
+                    this.onResize = function () {
+                        if (self.lossChart) self.lossChart.resize();
+                        if (self.accChart) self.accChart.resize();
+                    };
+                    window.addEventListener('resize', this.onResize);
+                },
+                drawLossChart: function () {
+                    var dom = document.getElementById('lossChart');
+                    if (!dom) return;
+                    if (this.lossChart) this.lossChart.dispose();
+                    this.lossChart = echarts.init(dom);
+                    var epochs = this.trainRows.map(function (r) { return r.epoch; });
+                    var trainLoss = this.trainRows.map(function (r) { return r.train_total_loss; });
+                    var valLoss = this.trainRows.map(function (r) { return r.val_total_loss; });
+                    this.lossChart.setOption({
+                        tooltip: { trigger: 'axis' },
+                        legend: { data: ['训练损失', '验证损失'] },
+                        grid: { left: 60, right: 30, top: 40, bottom: 40 },
+                        xAxis: { type: 'category', data: epochs, name: 'Epoch' },
+                        yAxis: { type: 'value', name: 'Loss' },
+                        series: [
+                            { name: '训练损失', type: 'line', data: trainLoss, smooth: true, lineStyle: { color: '#e4393c' } },
+                            { name: '验证损失', type: 'line', data: valLoss, smooth: true, lineStyle: { color: '#ff5000' } }
+                        ]
+                    });
+                },
+                drawAccChart: function () {
+                    var dom = document.getElementById('accuracyChart');
+                    if (!dom) return;
+                    if (this.accChart) this.accChart.dispose();
+                    this.accChart = echarts.init(dom);
+                    var epochs = this.trainRows.map(function (r) { return r.epoch; });
+                    this.accChart.setOption({
+                        tooltip: {
+                            trigger: 'axis',
+                            formatter: function (params) {
+                                var line = 'Epoch ' + params[0].axisValue + '<br/>';
+                                params.forEach(function (p) {
+                                    line += p.marker + p.seriesName + ': ' + (p.value * 100).toFixed(2) + '%<br/>';
+                                });
+                                return line;
+                            }
+                        },
+                        legend: { data: ['Precision', 'Recall', 'mAP@0.5', 'mAP@0.5-0.95'] },
+                        grid: { left: 60, right: 30, top: 40, bottom: 40 },
+                        xAxis: { type: 'category', data: epochs, name: 'Epoch' },
+                        yAxis: {
+                            type: 'value',
+                            min: 0,
+                            max: 1,
+                            axisLabel: { formatter: function (v) { return (v * 100).toFixed(0) + '%'; } }
+                        },
+                        series: [
+                            { name: 'Precision', type: 'line', data: this.trainRows.map(function (r) { return r.precision; }), smooth: true },
+                            { name: 'Recall', type: 'line', data: this.trainRows.map(function (r) { return r.recall; }), smooth: true },
+                            { name: 'mAP@0.5', type: 'line', data: this.trainRows.map(function (r) { return r.map50; }), smooth: true },
+                            { name: 'mAP@0.5-0.95', type: 'line', data: this.trainRows.map(function (r) { return r.map50_95; }), smooth: true }
+                        ]
+                    });
+                },
+                destroyCharts: function () {
+                    if (this.lossChart) {
+                        this.lossChart.dispose();
+                        this.lossChart = null;
+                    }
+                    if (this.accChart) {
+                        this.accChart.dispose();
+                        this.accChart = null;
+                    }
+                },
+                showImage: function (url) {
+                    this.previewUrl = url;
+                    this.previewOpen = true;
+                },
+                reloadAdminUsers: function () {
+                    var self = this;
+                    return AppApi.fetchJson(AppApi.paths.adminUsers).then(function (d) {
+                        if (d.code === 200) {
+                            self.adminUsers = (d.data && d.data.items) || [];
+                        } else {
+                            ElementPlus.ElMessage.error(d.message || '加载失败');
+                        }
+                    });
+                },
+                openAdminPwd: function (u) {
+                    this.adminPwdUser = u;
+                    this.adminPwdNew = '';
+                    this.adminPwdOpen = true;
+                },
+                submitAdminPwd: function () {
+                    var self = this;
+                    var pwd = (self.adminPwdNew || '').trim();
+                    if (pwd.length < 6) {
+                        ElementPlus.ElMessage.warning('新密码至少6位');
+                        return;
+                    }
+                    AppApi.fetchJson(AppApi.paths.adminUserPassword + encodeURIComponent(self.adminPwdUser.username) + '/password', {
+                        method: 'POST',
+                        body: { newPassword: pwd }
+                    }).then(function (d) {
+                        if (d.code === 200) {
+                            ElementPlus.ElMessage.success(d.message || '密码已更新');
+                            self.adminPwdOpen = false;
+                            self.reloadAdminUsers();
+                        } else {
+                            ElementPlus.ElMessage.error(d.message || '操作失败');
+                        }
+                    });
+                },
+                toggleUserRole: function (u) {
+                    var self = this;
+                    var nextRole = u.role === 'member' ? 'user' : 'member';
+                    var tip = nextRole === 'member' ? '设为会员用户？会员将自动使用云端大模型。' : '设为普通用户？';
+                    ElementPlus.ElMessageBox.confirm(tip, '调整用户类别', { type: 'warning' }).then(function () {
+                        return AppApi.fetchJson(AppApi.paths.adminUserRole + encodeURIComponent(u.username) + '/role', {
+                            method: 'POST',
+                            body: { role: nextRole }
+                        });
+                    }).then(function (d) {
+                        if (d && d.code === 200) {
+                            ElementPlus.ElMessage.success(d.message || '已更新');
+                            self.reloadAdminUsers();
+                        } else if (d) {
+                            ElementPlus.ElMessage.error(d.message || '操作失败');
+                        }
+                    }).catch(function () {});
+                },
+                adminUnbindPhone: function (u) {
+                    var self = this;
+                    if (!u.phone) return;
+                    if (!u.email) {
+                        ElementPlus.ElMessage.warning('手机与邮箱至少保留一项，请直接注销该用户');
+                        return;
+                    }
+                    ElementPlus.ElMessageBox.confirm('确定解绑用户「' + u.username + '」的手机号？', '解绑手机', { type: 'warning' }).then(function () {
+                        return AppApi.fetchJson(AppApi.paths.adminUserUnbindPhone + encodeURIComponent(u.username) + '/unbind-phone', { method: 'POST' });
+                    }).then(function (d) {
+                        if (d && d.code === 200) {
+                            ElementPlus.ElMessage.success(d.message || '已解绑');
+                            self.reloadAdminUsers();
+                        } else if (d) {
+                            ElementPlus.ElMessage.error(d.message || '操作失败');
+                        }
+                    }).catch(function () {});
+                },
+                adminUnbindEmail: function (u) {
+                    var self = this;
+                    if (!u.email) return;
+                    if (!u.phone) {
+                        ElementPlus.ElMessage.warning('手机与邮箱至少保留一项，请直接注销该用户');
+                        return;
+                    }
+                    ElementPlus.ElMessageBox.confirm('确定解绑用户「' + u.username + '」的邮箱？', '解绑邮箱', { type: 'warning' }).then(function () {
+                        return AppApi.fetchJson(AppApi.paths.adminUserUnbindEmail + encodeURIComponent(u.username) + '/unbind-email', { method: 'POST' });
+                    }).then(function (d) {
+                        if (d && d.code === 200) {
+                            ElementPlus.ElMessage.success(d.message || '已解绑');
+                            self.reloadAdminUsers();
+                        } else if (d) {
+                            ElementPlus.ElMessage.error(d.message || '操作失败');
+                        }
+                    }).catch(function () {});
+                },
+                adminDeleteUser: function (u) {
+                    var self = this;
+                    ElementPlus.ElMessageBox.confirm(
+                        '注销后该用户数据将永久删除，是否继续？',
+                        '注销用户「' + u.username + '」',
+                        { type: 'error', confirmButtonText: '确认注销' }
+                    ).then(function () {
+                        return AppApi.fetchJson(AppApi.paths.adminUserDelete + encodeURIComponent(u.username), { method: 'DELETE' });
+                    }).then(function (d) {
+                        if (d && d.code === 200) {
+                            ElementPlus.ElMessage.success(d.message || '已注销');
+                            self.reloadAdminUsers();
+                        } else if (d) {
+                            ElementPlus.ElMessage.error(d.message || '操作失败');
+                        }
+                    }).catch(function () {});
+                },
+                closePage: function () {
+                    window.close();
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

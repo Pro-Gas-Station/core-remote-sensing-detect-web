@@ -1,0 +1,6 @@
+{
+  "api_url": "https://api.deepseek.com",
+  "api_key": "在此填写您的 API Key",
+  "model": "deepseek-chat",
+  "comment": "亦支持 OpenAI 兼容接口，如硅基流动 https://api.siliconflow.cn/v1"
+}

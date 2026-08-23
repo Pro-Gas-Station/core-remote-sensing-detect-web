@@ -1,0 +1,183 @@
+/* 顶部品牌区 */
+.brand-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    flex: 1;
+}
+
+.brand-logo-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.brand-logo-link:hover .logo-icon-wrap {
+    transform: scale(1.04);
+}
+
+.logo-icon-wrap {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(145deg, #ff7a45 0%, #e4393c 55%, #c81623 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(200, 22, 35, 0.35);
+    transition: transform 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.logo-icon-wrap::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 40%;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    transform: skewX(-20deg);
+    animation: logoShine 3.5s ease-in-out infinite;
+}
+
+.logo-icon-wrap .iconfont {
+    font-size: 22px;
+    color: #fff;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes logoShine {
+    0%, 75% { left: -60%; }
+    100% { left: 120%; }
+}
+
+.brand-title-col .brand-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+    letter-spacing: 1px;
+}
+
+.brand-slide-viewport {
+    height: 16px;
+    overflow: hidden;
+}
+
+.brand-slide-list {
+    animation: brandSlideY 10s ease-in-out infinite;
+}
+
+.brand-slide-list span {
+    display: block;
+    height: 16px;
+    line-height: 16px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+@keyframes brandSlideY {
+    0%, 15% { transform: translateY(0); }
+    18%, 33% { transform: translateY(-16px); }
+    36%, 51% { transform: translateY(-32px); }
+    54%, 69% { transform: translateY(-48px); }
+    72%, 87% { transform: translateY(-64px); }
+    90%, 100% { transform: translateY(0); }
+}
+
+/* 头部主题轮播：渐变底 + 大号渐变图标（Font Awesome） */
+.brand-mini-carousel {
+    width: 220px;
+    height: 58px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mini-slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 14px;
+    opacity: 0;
+    transition: opacity 0.85s ease;
+    color: #fff;
+}
+
+.mini-slide.active { opacity: 1; }
+
+/* 图标本体：渐变色 + 投影立体感（不加圆形底） */
+.mini-slide-glyph {
+    font-size: 34px;
+    line-height: 1;
+    flex-shrink: 0;
+    display: inline-block;
+    background: var(--glyph-grad, linear-gradient(165deg, #fff, #ddd));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.55)) drop-shadow(0 1px 0 rgba(255, 255, 255, 0.35));
+}
+
+.mini-slide-text {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    white-space: nowrap;
+}
+
+.mini-dots {
+    position: absolute;
+    bottom: 5px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+    z-index: 2;
+}
+
+.mini-dots i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.45);
+    display: block;
+}
+
+.mini-dots i.on { background: #fff; }
+
+.header-user-link {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+    z-index: 5;
+}
+
+.header-user-link:hover {
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.12);
+}

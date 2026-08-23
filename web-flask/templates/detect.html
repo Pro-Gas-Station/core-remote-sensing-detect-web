@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.ico?v=2" sizes="32x32">
+    <link rel="icon" href="/static/favicon.png?v=2" type="image/png" sizes="32x32">
+    <title>检测工作台 - 遥感影像目标检测系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.1/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.1/dist/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/static/iconfont/iconfont.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/brand-header.css">
+    <link rel="stylesheet" href="/static/css/themes.css?v=12">
+    <link rel="stylesheet" href="/static/css/detect-commercial.css">
+    <style>
+        html, body { height: 100%; margin: 0; overflow: hidden; }
+        #app { height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+        .page-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+        .page-content {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+        }
+        .header-model-select { min-width: 220px; }
+        .header-model-select .el-input__wrapper {
+            background: #fff;
+            box-shadow: none;
+        }
+        .header-model-select .el-input__inner,
+        .header-model-select .el-select__placeholder {
+            color: #333;
+        }
+        .site-header .header-logout-btn {
+            background: rgba(255, 255, 255, 0.12) !important;
+            border: 1px solid rgba(255, 255, 255, 0.65) !important;
+            color: #fff !important;
+            font-size: 13px;
+            padding: 5px 14px;
+        }
+        .site-header .header-logout-btn:hover,
+        .site-header .header-logout-btn:focus {
+            background: rgba(255, 255, 255, 0.22) !important;
+            border-color: #fff !important;
+            color: #fff !important;
+        }
+        .zoom-toolbar button { margin: 0 4px; padding: 4px 12px; border: 1px solid #ddd; background: #fff; cursor: pointer; }
+        .back-top-btn {
+            position: fixed;
+            right: 24px;
+            bottom: 48px;
+            z-index: 100;
+            background: #fff;
+            border: 1px solid #ddd;
+            color: #666;
+            padding: 8px 14px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .back-top-btn:hover { color: #e4393c; border-color: #e4393c; }
+        .sub-nav .nav-item { cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="page-body">
+            <header class="site-header" style="height:62px;padding:0 20px;">
+                <div class="brand-block brand-header">
+                    <a class="brand-logo-link" href="#" @click.prevent="scrollToTop">
+                        <div class="logo-icon-wrap">
+                            <i class="iconfont icon-weixing"></i>
+                        </div>
+                        <div class="brand-title-col">
+                            <div class="brand-name">遥感检测平台</div>
+                            <div class="brand-slide-viewport">
+                                <div class="brand-slide-list">
+                                    <span>智能遥感目标检测服务中心</span>
+                                    <span>飞机 · 船舶 · 港口 等 10 类物体</span>
+                                    <span>深度学习 YOLO 在线检测</span>
+                                    <span>一键上传影像 · 实时分析</span>
+                                    <span>智能遥感目标检测服务中心</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="brand-mini-carousel">
+                        <div
+                            v-for="(s, i) in brandPromoSlides"
+                            :key="s.key"
+                            class="mini-slide"
+                            :class="{ active: promoIndex === i }"
+                            :style="{ background: s.bg }"
+                        >
+                            <i :class="[s.faIcon, 'mini-slide-glyph']" :style="{ '--glyph-grad': s.iconGrad }"></i>
+                            <span class="mini-slide-text">{{ s.label }}</span>
+                        </div>
+                        <div class="mini-dots">
+                            <i v-for="(s, i) in brandPromoSlides" :key="'d'+i" :class="{ on: promoIndex === i }"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-tools">
+                    <el-select v-model="modelKey" placeholder="选择检测模型" class="header-model-select" :loading="modelLoading" @change="onModelSwitch" size="small">
+                        <el-option v-for="m in modelList" :key="m.key" :label="m.name" :value="m.key" />
+                    </el-select>
+                    <a class="header-user-link" href="/profile.html" @click.prevent="goProfile" title="个人中心">{{ displayName }}</a>
+                    <el-button class="header-logout-btn" size="small" @click="logout">退出登录</el-button>
+                </div>
+            </header>
+
+            <nav class="sub-nav">
+                <span class="nav-item active" @click.prevent="scrollToTop">影像检测</span>
+                <span class="nav-item" @click.prevent="openModelData('experiments')">消融/对比实验</span>
+                <span class="nav-item" @click.prevent="openModelData('validation')">模型评估</span>
+                <span class="nav-item" @click.prevent="openModelData('training')">训练数据</span>
+                <span v-if="isAdmin" class="nav-item" @click.prevent="openAdminPage">账号管理</span>
+                <span class="breadcrumb">
+                    <a style="cursor:pointer;color:#999;" @click="scrollToTop">首页</a> &gt; 检测中心 &gt; 在线检测
+                </span>
+            </nav>
+
+            <div class="page-content">
+                <div class="jd-page" ref="pageScroll" @scroll="onPageScroll">
+                    <div class="jd-wrap">
+                        <div class="jd-notice">
+                            <em>公告</em>
+                            系统支持飞机、船舶、港口、桥梁等 10 类遥感物体目标检测，上传影像即可在线识别。
+                        </div>
+
+                        <!-- Banner 左大右小（实物遥感图） -->
+                        <div class="jd-hero">
+                            <div class="hero-main" @click="loadWebImage(imgPath('harbor'), '港口')">
+                                <img :src="imgPath('banner_1')" alt="港口" />
+                                <div class="hero-label">港口遥感俯视图<small>码头泊位 · 港区设施识别</small></div>
+                            </div>
+                            <div class="hero-side">
+                                <div class="hero-sub" @click="loadWebImage(imgPath('airplane'), '飞机')">
+                                    <img :src="imgPath('banner_2')" alt="飞机" />
+                                    <div class="hero-label">飞机机场俯视图</div>
+                                </div>
+                                <div class="hero-sub" @click="loadWebImage(imgPath('ship'), '船舶')">
+                                    <img :src="imgPath('banner_3')" alt="船舶" />
+                                    <div class="hero-label">船舶海面俯视图</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 物体类别（实物缩略图） -->
+                        <div class="jd-floor">
+                            <div class="floor-hd">
+                                <h3>支持检测的物体类别</h3>
+                            </div>
+                            <div class="cate-icon-row">
+                                <div class="cate-icon-item" v-for="c in classList" :key="c.key" @click="loadWebImage(c.full, c.name)">
+                                    <div class="ci-img"><img :src="c.thumb" :alt="c.name" /></div>
+                                    <div class="ci-name">{{ c.name }}</div>
+                                    <div class="ci-en">{{ c.en }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 常用样例（实物图） -->
+                        <div class="jd-floor">
+                            <div class="floor-hd">
+                                <h3>常用检测样例</h3>
+                                <a @click="scrollToWork">去检测 ↓</a>
+                            </div>
+                            <div class="goods-scroll">
+                                <div class="goods-card-v2" v-for="g in goodsList" :key="g.id" @click="loadWebImage(g.url, g.title)">
+                                    <img class="gc-img" :src="g.url" :alt="g.title" />
+                                    <div class="gc-info">
+                                        <div class="gc-title">{{ g.title }}</div>
+                                        <div class="gc-tag">点击加载检测</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 三栏检测区 -->
+                        <div class="jd-work-layout" ref="workArea">
+                            <aside class="jd-panel-left">
+                                <div class="pl-hd">快捷入口</div>
+                                <div class="jd-quick-list">
+                                    <div class="jd-quick-item" @click="scrollToTop">
+                                        <img :src="imgPath('harbor', true)" alt="" />
+                                        <span>返回样例选择</span>
+                                    </div>
+                                    <div class="jd-quick-item" @click="triggerFileInput">
+                                        <img :src="imgPath('airplane', true)" alt="" />
+                                        <span>上传本地影像</span>
+                                    </div>
+                                    <div class="jd-quick-item" v-for="q in quickLinks" :key="q.key" @click="loadWebImage(q.url, q.label)">
+                                        <img :src="q.thumb" :alt="q.label" />
+                                        <span>{{ q.label }}</span>
+                                    </div>
+                                    <div class="jd-quick-item" v-if="activeModel && activeModel.train_results_path" @click="openModelData('training')">
+                                        <img :src="imgPath('ground_track_field', true)" alt="" style="object-fit:cover;" />
+                                        <span>查看训练曲线</span>
+                                    </div>
+                                    <div class="jd-quick-item" v-if="activeModel && activeModel.val_data_path" @click="openModelData('validation')">
+                                        <img :src="imgPath('bridge', true)" alt="" />
+                                        <span>查看测试评估</span>
+                                    </div>
+                                </div>
+                            </aside>
+
+                            <div class="jd-panel-main">
+                                <div class="panel-title">
+                                    影像上传 · 在线检测
+                                    <a class="panel-back-link" style="float:right;font-size:12px;cursor:pointer;font-weight:400;" @click="scrollToTop">↑ 返回样例区</a>
+                                </div>
+                                <div class="panel-body-inner">
+                                    <div v-if="!imageSrc" class="upload-box" :class="{ drag: dragActive }"
+                                        @click="triggerFileInput" @drop.prevent="onFileDrop"
+                                        @dragover.prevent="dragActive = true" @dragleave="dragActive = false">
+                                        <img class="up-hint-img" :src="imgPath('ship')" alt="船舶样例" />
+                                        <p style="font-size:14px;color:#333;margin:0 0 6px;">点击或拖拽上传遥感影像</p>
+                                        <small style="color:#999;">JPG / PNG，不超过 30MB</small>
+                                    </div>
+                                    <div v-else>
+                                        <img :src="imageSrc" class="up-preview" alt="" @click="openPreview(imageSrc)" />
+                                        <div style="display:flex;gap:8px;margin-bottom:4px;">
+                                            <el-button size="small" type="danger" plain @click="removeImage">清除</el-button>
+                                            <el-button size="small" @click="triggerFileInput">更换影像</el-button>
+                                        </div>
+                                        <button class="btn-detect" :disabled="detecting" @click="runDetect">
+                                            {{ detecting ? '检测中...' : '开始目标检测' }}
+                                        </button>
+                                    </div>
+                                    <div v-if="activeModel" class="model-bar-v2">
+                                        <strong>{{ activeModel.name }}</strong><br>
+                                        检测 {{ activeModel.num_classes }} 类目标 · YOLO 深度学习模型<br>
+                                        <a v-if="activeModel.train_results_path" @click="openModelData('training')">训练曲线</a>
+                                        <a v-if="activeModel.val_data_path" @click="openModelData('validation')">测试评估</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="jd-panel-result">
+                                <div class="panel-title">
+                                    检测结果
+                                    <span v-if="detectResult" class="panel-sub" style="font-weight:400;font-size:12px;">
+                                        （{{ detectResult.total_detections || 0 }} 个目标）
+                                    </span>
+                                </div>
+                                <div class="panel-body-inner">
+                                    <div v-if="detecting" class="loading-v2">正在分析影像，请稍候...</div>
+                                    <template v-if="detectResult && !detecting">
+                                        <img v-if="detectResult.detection_image" class="result-preview" :src="detectResult.detection_image" alt="" @click="openPreview(detectResult.detection_image)" />
+                                        <div v-if="detectResult.detections && detectResult.detections.length" style="margin-bottom:8px;">
+                                            <el-button size="small" type="primary" plain @click="exportPdf">导出 PDF 报告</el-button>
+                                            <el-button size="small" plain @click="emailReport">发送至邮箱</el-button>
+                                        </div>
+                                        <div v-if="detectResult.detections && detectResult.detections.length">
+                                            <div class="det-line" v-for="(item, idx) in detectResult.detections" :key="item.detection_id">
+                                                <div class="n" :class="{ hot: idx === 0 }">{{ idx + 1 }}</div>
+                                                <div class="info">
+                                                    <div class="name">{{ item.class_name_zh }}</div>
+                                                    <div class="sub">{{ item.class_name }} · {{ item.percentage }}</div>
+                                                </div>
+                                                <div class="sc">{{ item.percentage }}</div>
+                                            </div>
+                                        </div>
+                                        <div v-else class="empty-v2">
+                                            <img :src="imgPath('vehicle', true)" alt="" />
+                                            <p>{{ detectResult.message || '未检测到目标' }}</p>
+                                        </div>
+                                    </template>
+                                    <div v-if="!detectResult && !detecting" class="empty-v2">
+                                        <img :src="imgPath('airplane', true)" alt="" />
+                                        <p>在上方选择样例或上传影像<br>点击「开始目标检测」查看结果</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="page-footer">遥感影像目标检测系统 翊卫云瞳</footer>
+
+            <div v-show="showBackTop" class="back-top-btn" @click="scrollToTop">↑ 返回顶部</div>
+        </div>
+
+        <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileChange" />
+
+        <el-dialog v-model="previewVisible" title="影像预览" width="55%" center>
+            <div style="text-align:center;overflow:auto;">
+                <img :src="previewSrc" alt="" :style="{ transform: 'scale(' + zoomLevel + ')', transition: 'transform 0.2s', maxWidth: '100%' }" />
+            </div>
+            <div class="zoom-toolbar" style="text-align:center;margin-top:12px;">
+                <button @click="zoomOut">缩小</button>
+                <span>{{ Math.round(zoomLevel * 100) }}%</span>
+                <button @click="zoomIn">放大</button>
+                <button @click="resetZoom">重置</button>
+            </div>
+        </el-dialog>
+    </div>
+
+    <script src="/static/js/app-core.js?v=16"></script>
+    <script>
+        var createApp = Vue.createApp;
+        var ElMessage = ElementPlus.ElMessage;
+        var MAX = 30 * 1024 * 1024;
+
+        var IMG_VER = 5;
+
+        var CLASS_DEF = [
+            { key: 'airplane', name: '飞机', en: 'Airplane' },
+            { key: 'ship', name: '船舶', en: 'Ship' },
+            { key: 'storage_tank', name: '储油罐', en: 'Tank' },
+            { key: 'baseball_diamond', name: '棒球场', en: 'Baseball' },
+            { key: 'tennis_court', name: '网球场', en: 'Tennis' },
+            { key: 'basketball_court', name: '篮球场', en: 'Basketball' },
+            { key: 'ground_track_field', name: '田径场', en: 'Track' },
+            { key: 'harbor', name: '港口', en: 'Harbor' },
+            { key: 'bridge', name: '桥梁', en: 'Bridge' },
+            { key: 'vehicle', name: '车辆', en: 'Vehicle' }
+        ];
+
+        var GOODS_KEYS = ['airplane', 'ship', 'harbor', 'bridge', 'vehicle', 'storage_tank'];
+        var QUICK_KEYS = ['harbor', 'ship', 'bridge'];
+
+        function findClass(key) {
+            for (var i = 0; i < CLASS_DEF.length; i++) {
+                if (CLASS_DEF[i].key === key) return CLASS_DEF[i];
+            }
+            return null;
+        }
+
+        function categoryImg(key, thumb) {
+            var name = thumb ? key + '_thumb' : key;
+            return '/images/web/' + name + '.jpg?v=' + IMG_VER;
+        }
+
+        createApp({
+            data: function () {
+                return {
+                    currentUser: {},
+                    modelList: [],
+                    modelKey: '',
+                    modelLoading: false,
+                    imageSrc: null,
+                    detecting: false,
+                    detectResult: null,
+                    dragActive: false,
+                    previewVisible: false,
+                    previewSrc: '',
+                    zoomLevel: 1,
+                    showBackTop: false,
+                    promoIndex: 0,
+                    promoTimer: null
+                };
+            },
+            computed: {
+                isAdmin: function () {
+                    return this.currentUser.isAdmin || this.currentUser.role === 'admin' || this.currentUser.username === 'admin';
+                },
+                activeModel: function () {
+                    for (var i = 0; i < this.modelList.length; i++) {
+                        if (this.modelList[i].key === this.modelKey) return this.modelList[i];
+                    }
+                    return null;
+                },
+                displayName: function () {
+                    return this.currentUser.realName || this.currentUser.username || '用户';
+                },
+                userRole: function () {
+                    return this.currentUser.roleLabel || (this.currentUser.username === 'admin' ? '管理员' : '普通用户');
+                },
+                brandPromoSlides: function () {
+                    return [
+                        {
+                            key: 'harbor',
+                            label: '港口',
+                            bg: 'linear-gradient(135deg,#1e3c72 0%,#2a5298 100%)',
+                            faIcon: 'fa-solid fa-anchor',
+                            iconGrad: 'linear-gradient(165deg,#ffffff 0%,#c4dcff 42%,#5b8def 100%)'
+                        },
+                        {
+                            key: 'airplane',
+                            label: '飞机',
+                            bg: 'linear-gradient(135deg,#c81623 0%,#ff7875 100%)',
+                            faIcon: 'fa-solid fa-plane',
+                            iconGrad: 'linear-gradient(165deg,#ffffff 0%,#ffe7ba 40%,#ff7875 100%)'
+                        },
+                        {
+                            key: 'ship',
+                            label: '船舶',
+                            bg: 'linear-gradient(135deg,#0f4c75 0%,#3282b8 100%)',
+                            faIcon: 'fa-solid fa-ship',
+                            iconGrad: 'linear-gradient(165deg,#ffffff 0%,#bae7ff 42%,#40a9ff 100%)'
+                        },
+                        {
+                            key: 'bridge',
+                            label: '桥梁',
+                            bg: 'linear-gradient(135deg,#434343 0%,#262626 100%)',
+                            faIcon: 'fa-solid fa-bridge-water',
+                            iconGrad: 'linear-gradient(165deg,#ffffff 0%,#e8e8e8 45%,#8c8c8c 100%)'
+                        }
+                    ];
+                },
+                classList: function () {
+                    return CLASS_DEF.map(function (c) {
+                        return {
+                            key: c.key,
+                            name: c.name,
+                            en: c.en,
+                            thumb: categoryImg(c.key, true),
+                            full: categoryImg(c.key, false)
+                        };
+                    });
+                },
+                goodsList: function () {
+                    var list = [];
+                    for (var i = 0; i < GOODS_KEYS.length; i++) {
+                        var key = GOODS_KEYS[i];
+                        var c = findClass(key);
+                        if (!c) continue;
+                        list.push({
+                            id: i + 1,
+                            key: key,
+                            url: categoryImg(key, false),
+                            title: c.name + ' · 遥感俯视图'
+                        });
+                    }
+                    return list;
+                },
+                quickLinks: function () {
+                    var list = [];
+                    for (var i = 0; i < QUICK_KEYS.length; i++) {
+                        var key = QUICK_KEYS[i];
+                        var c = findClass(key);
+                        if (!c) continue;
+                        list.push({
+                            key: key,
+                            url: categoryImg(key, false),
+                            thumb: categoryImg(key, true),
+                            label: c.name + '样例'
+                        });
+                    }
+                    return list;
+                }
+            },
+            mounted: function () {
+                if (!UserSession.loggedIn()) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                this.currentUser = UserSession.read();
+                if (this.currentUser && this.currentUser.theme) {
+                    ThemeManager.apply(this.currentUser.theme);
+                }
+                this.fetchModels();
+                this.startPromoCarousel();
+            },
+            beforeUnmount: function () {
+                if (this.promoTimer) clearInterval(this.promoTimer);
+            },
+            methods: {
+                imgPath: function (key, thumb) {
+                    return categoryImg(key, thumb);
+                },
+                startPromoCarousel: function () {
+                    var self = this;
+                    if (self.promoTimer) clearInterval(self.promoTimer);
+                    self.promoTimer = setInterval(function () {
+                        var n = self.brandPromoSlides.length;
+                        if (n) self.promoIndex = (self.promoIndex + 1) % n;
+                    }, 4000);
+                },
+                onPromoClick: function () {
+                    var slides = this.brandPromoSlides;
+                    var s = slides[this.promoIndex];
+                    if (s) this.loadWebImage(this.imgPath(s.key), s.label);
+                },
+                fetchModels: function () {
+                    var self = this;
+                    self.modelLoading = true;
+                    fetch(AppApi.url(AppApi.paths.models))
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d.code === 200) {
+                                self.modelList = d.data || [];
+                                if (self.modelList.length) self.modelKey = self.modelList[0].key;
+                            }
+                        })
+                        .finally(function () { self.modelLoading = false; });
+                },
+                onModelSwitch: function () { this.detectResult = null; },
+                goProfile: function () {
+                    window.location.assign('/profile.html');
+                },
+                logout: function () {
+                    UserSession.clear();
+                    window.location.href = '/login.html';
+                },
+                scrollToTop: function () {
+                    var el = this.$refs.pageScroll;
+                    if (el) el.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+                onPageScroll: function () {
+                    var el = this.$refs.pageScroll;
+                    this.showBackTop = el && el.scrollTop > 280;
+                },
+                scrollToWork: function () {
+                    var page = this.$refs.pageScroll;
+                    var el = this.$refs.workArea;
+                    if (page && el) {
+                        var top = el.getBoundingClientRect().top
+                            - page.getBoundingClientRect().top + page.scrollTop;
+                        page.scrollTo({ top: top - 10, behavior: 'smooth' });
+                    }
+                },
+                triggerFileInput: function () { this.$refs.fileInput.click(); },
+                onFileChange: function (e) {
+                    if (e.target.files[0]) this.loadFile(e.target.files[0]);
+                    e.target.value = '';
+                },
+                onFileDrop: function (e) {
+                    this.dragActive = false;
+                    if (e.dataTransfer.files.length) this.loadFile(e.dataTransfer.files[0]);
+                },
+                loadFile: function (file) {
+                    if (!file.type || file.type.indexOf('image/') !== 0) {
+                        ElMessage.warning('请选择图片');
+                        return;
+                    }
+                    if (file.size > MAX) {
+                        ElMessage.warning('不能超过 30MB');
+                        return;
+                    }
+                    var self = this;
+                    var reader = new FileReader();
+                    reader.onload = function (ev) {
+                        self.imageSrc = ev.target.result;
+                        self.detectResult = null;
+                    };
+                    reader.readAsDataURL(file);
+                },
+                loadWebImage: function (url, title) {
+                    var self = this;
+                    fetch(url)
+                        .then(function (r) { return r.blob(); })
+                        .then(function (blob) {
+                            var reader = new FileReader();
+                            reader.onload = function (ev) {
+                                self.imageSrc = ev.target.result;
+                                self.detectResult = null;
+                                ElMessage.success('已加载：' + title);
+                            };
+                            reader.readAsDataURL(blob);
+                        })
+                        .catch(function () { ElMessage.error('图片加载失败'); });
+                },
+                removeImage: function () {
+                    this.imageSrc = null;
+                    this.detectResult = null;
+                },
+                runDetect: function () {
+                    var self = this;
+                    if (!self.imageSrc || self.detecting) return;
+                    self.detecting = true;
+                    fetch(AppApi.url(AppApi.paths.detect), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: self.modelKey, image: self.imageSrc })
+                    })
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d.code === 200) {
+                                self.detectResult = d.data;
+                                UserSession.saveLastDetect({
+                                    modelName: self.activeModel ? self.activeModel.name : self.modelKey,
+                                    detections: d.data.detections || [],
+                                    total: d.data.total_detections || 0,
+                                    message: d.data.message
+                                });
+                                var n = d.data.total_detections || 0;
+                                ElMessage.success(n ? '发现 ' + n + ' 个目标' : '未发现目标');
+                            } else {
+                                ElMessage.error(d.message || '检测失败');
+                            }
+                        })
+                        .catch(function () { ElMessage.error('请求失败'); })
+                        .finally(function () { self.detecting = false; });
+                },
+                openModelData: function (type) {
+                    var key = this.modelKey || 'ready-model';
+                    var url = AppApi.url('/model-data.html?type=' + encodeURIComponent(type) + '&model=' + encodeURIComponent(key));
+                    var winName = 'rs_sub_' + type;
+                    var w = window.open(url, winName, 'width=1100,height=760,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes');
+                    if (w) {
+                        try { w.focus(); } catch (e) { /* ignore */ }
+                    } else {
+                        ElMessage.warning('子窗口被浏览器拦截，请允许弹出窗口后重试（主页不会跳转）');
+                    }
+                },
+                openAdminPage: function () {
+                    this.openModelData('admin');
+                },
+                reportPayload: function () {
+                    var r = this.detectResult || UserSession.readLastDetect();
+                    if (!r) return null;
+                    return {
+                        modelName: this.activeModel ? this.activeModel.name : (r.modelName || this.modelKey),
+                        detections: r.detections || [],
+                        total: r.total_detections || r.total || (r.detections ? r.detections.length : 0),
+                        message: r.message,
+                        username: UserSession.username()
+                    };
+                },
+                exportPdf: function () {
+                    var payload = this.reportPayload();
+                    if (!payload) {
+                        ElMessage.warning('请先完成一次检测');
+                        return;
+                    }
+                    AppApi.downloadPdf(AppApi.paths.reportPdf, payload)
+                        .then(function (blob) {
+                            var a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = 'detection_report_' + Date.now() + '.pdf';
+                            a.click();
+                            ElMessage.success('PDF 已导出（新版表格报告）');
+                        })
+                        .catch(function (e) { ElMessage.error(e.message || '导出失败'); });
+                },
+                emailReport: function () {
+                    var self = this;
+                    var payload = this.reportPayload();
+                    if (!payload) {
+                        ElMessage.warning('请先完成一次检测');
+                        return;
+                    }
+                    AppApi.fetchJson(AppApi.paths.reportEmail, { method: 'POST', body: payload })
+                        .then(function (d) {
+                            if (d.code === 200) ElMessage.success(d.message);
+                            else ElMessage.warning(d.message || '发送失败');
+                        })
+                        .catch(function () { ElMessage.error('请求失败'); });
+                },
+                openPreview: function (src) {
+                    this.previewSrc = src;
+                    this.zoomLevel = 1;
+                    this.previewVisible = true;
+                },
+                zoomIn: function () { this.zoomLevel = Math.min(3, this.zoomLevel + 0.2); },
+                zoomOut: function () { this.zoomLevel = Math.max(0.4, this.zoomLevel - 0.2); },
+                resetZoom: function () { this.zoomLevel = 1; }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

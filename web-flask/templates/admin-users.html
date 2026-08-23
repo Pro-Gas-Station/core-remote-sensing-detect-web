@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.ico?v=2" sizes="32x32">
+    <link rel="icon" href="/static/favicon.png?v=2" type="image/png" sizes="32x32">
+    <title>账号管理 - 遥感影像目标检测系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.1/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.1/dist/index.css">
+    <link rel="stylesheet" href="/static/iconfont/iconfont.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/brand-header.css">
+    <style>
+        .site-header .header-action-btn {
+            background: rgba(255, 255, 255, 0.12) !important;
+            border: 1px solid rgba(255, 255, 255, 0.65) !important;
+            color: #fff !important;
+            font-size: 13px;
+        }
+        .admin-meta {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        .admin-meta strong { color: #333; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="data-page">
+            <header class="site-header">
+                <div class="brand-block brand-header">
+                    <div class="brand-logo-link" style="cursor:default;">
+                        <div class="logo-icon-wrap">
+                            <i class="iconfont icon-yonghu"></i>
+                        </div>
+                        <div class="brand-title-col">
+                            <div class="brand-name">系统账号管理</div>
+                            <div class="brand-slide-viewport">
+                                <div class="brand-slide-list">
+                                    <span>SQLite 数据库 · 全量用户</span>
+                                    <span>用户名 · 密码 · 绑定信息</span>
+                                    <span>仅管理员可访问</span>
+                                    <span>SQLite 数据库 · 全量用户</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-tools">
+                    <el-button class="header-action-btn" size="small" @click="loadUsers">刷新</el-button>
+                    <el-button class="header-action-btn" size="small" @click="closePage">关闭窗口</el-button>
+                </div>
+            </header>
+
+            <div class="page-content" style="flex:1;overflow:auto;">
+                <div v-if="loading" class="state-empty">正在从数据库加载用户…</div>
+                <div v-else-if="errorMsg" class="state-empty">
+                    <div class="state-title">无法加载</div>
+                    <div class="state-desc">{{ errorMsg }}</div>
+                </div>
+                <template v-else>
+                    <div class="admin-meta">
+                        当前登录：<strong>{{ currentUser.username }}</strong>（{{ currentUser.roleLabel || '管理员' }}）
+                        · 共 <strong>{{ users.length }}</strong> 个账号
+                        · 数据源：<strong>data/app.db</strong>
+                    </div>
+                    <div class="panel-card">
+                        <div class="panel-head">全部注册用户</div>
+                        <div class="panel-body" style="overflow-x:auto;">
+                            <table class="data-table" v-if="users.length">
+                                <thead>
+                                    <tr>
+                                        <th>用户名</th>
+                                        <th>密码</th>
+                                        <th>角色</th>
+                                        <th>姓名</th>
+                                        <th>手机</th>
+                                        <th>邮箱</th>
+                                        <th>主题</th>
+                                        <th>性别</th>
+                                        <th>单位</th>
+                                        <th>部门</th>
+                                        <th>地区</th>
+                                        <th>注册时间</th>
+                                        <th>更新时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="u in users" :key="u.username">
+                                        <td>{{ u.username }}</td>
+                                        <td>{{ u.password }}</td>
+                                        <td>{{ u.roleLabel }}</td>
+                                        <td>{{ u.realName || '—' }}</td>
+                                        <td>{{ u.phone || '未绑定' }}</td>
+                                        <td>{{ u.email || '未绑定' }}</td>
+                                        <td>{{ u.theme || 'default' }}</td>
+                                        <td>{{ u.gender || '—' }}</td>
+                                        <td>{{ u.workUnit || '—' }}</td>
+                                        <td>{{ u.department || '—' }}</td>
+                                        <td>{{ u.region || '—' }}</td>
+                                        <td>{{ formatDate(u.createdAt) }}</td>
+                                        <td>{{ formatDate(u.updatedAt) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div v-else class="state-empty">数据库中暂无用户记录</div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app-core.js?v=16"></script>
+    <script>
+        var createApp = Vue.createApp;
+
+        createApp({
+            data: function () {
+                return {
+                    currentUser: {},
+                    users: [],
+                    loading: false,
+                    errorMsg: ''
+                };
+            },
+            mounted: function () {
+                if (!UserSession.loggedIn()) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                this.currentUser = UserSession.read() || {};
+                var isAdmin = this.currentUser.isAdmin
+                    || this.currentUser.role === 'admin'
+                    || this.currentUser.username === 'admin';
+                if (!isAdmin) {
+                    this.errorMsg = '仅管理员可查看账号管理，请使用 admin 账号登录。';
+                    return;
+                }
+                this.loadUsers();
+            },
+            methods: {
+                formatDate: function (s) {
+                    if (!s) return '—';
+                    return String(s).slice(0, 19).replace('T', ' ');
+                },
+                loadUsers: function () {
+                    var self = this;
+                    self.loading = true;
+                    self.errorMsg = '';
+                    AppApi.fetchJson(AppApi.paths.adminUsers)
+                        .then(function (d) {
+                            if (d.code === 200) {
+                                self.users = (d.data && d.data.items) || [];
+                            } else {
+                                self.errorMsg = d.message || '加载失败';
+                            }
+                        })
+                        .catch(function (e) {
+                            self.errorMsg = (e && e.message) || '请求异常，请确认已启动 Flask 服务';
+                        })
+                        .finally(function () {
+                            self.loading = false;
+                        });
+                },
+                closePage: function () {
+                    window.close();
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

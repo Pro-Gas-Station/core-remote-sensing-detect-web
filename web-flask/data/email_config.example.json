@@ -1,0 +1,10 @@
+{
+  "smtp_host": "smtp.example.com",
+  "smtp_port": 465,
+  "smtp_user": "your_email@example.com",
+  "smtp_pass": "请填写客户端专用密码",
+  "smtp_from": "遥感检测系统 <your_email@example.com>",
+  "use_ssl": true,
+  "use_tls": false,
+  "_说明": "复制为 email_config.json 后填写。企业邮箱一般在设置里开启 SMTP 并获取客户端专用密码。"
+}

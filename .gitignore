@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 本地配置与密钥（上传前务必检查）
+web-flask/data/email_config.json
+web-flask/data/sms_config.json
+web-flask/data/member_llm_config.json
+web-flask/data/app.db
+web-flask/data/smtp_diagnose_result.txt
+web-flask/users.json
+
+# 训练数据与权重（体积大，自行下载或训练生成）
+other/model_train/detect/dataset/**/images/
+other/model_train/detect/dataset/**/labels/
+other/model_train/detect/output/
+other/model_train/detect/weights/*.pt
+!other/model_train/detect/weights/README.md
+
+# 缓存与临时文件
+*.log
+*.cache
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
+_flatten_repo.py
+_flatten_repo.ps1
+_flatten_log.txt
+_git_status.py
+
+# 用户上传与运行时生成
+web-flask/templates/images/uploads/
+web-flask/templates/images/avatars/*
+!web-flask/templates/images/avatars/.gitkeep

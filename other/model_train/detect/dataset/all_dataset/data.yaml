@@ -1,0 +1,42 @@
+# YOLO数据集配置文件
+train: ../train/images
+val: ../val/images
+test: ../test/images
+
+# 类别数量
+nc: 10
+
+# 类别名称
+names:
+  0: airplane
+  1: ship
+  2: storage_tank
+  3: baseball_diamond
+  4: tennis_court
+  5: basketball_court
+  6: ground_track_field
+  7: harbor
+  8: bridge
+  9: vehicle
+
+# 数据量
+# 训练集数量: 559 (正样本: 454, 负样本: 105)
+# 验证集数量: 160 (正样本: 130, 负样本: 30)
+# 测试集数量: 81 (正样本: 66, 负样本: 15)
+
+# 数据集来源：https://www.kaggle.com/datasets/pavansriram3/nwpu-vhr
+
+# ====================
+# 中文类别名称映射
+# ====================
+# airplane : 飞机
+# ship : 船舶
+# storage_tank : 储油罐
+# baseball_diamond : 棒球场
+# tennis_court : 网球场
+# basketball_court : 篮球场
+# ground_track_field : 田径场
+# harbor : 港口
+# bridge : 桥梁
+# vehicle : 车辆
+# ====================

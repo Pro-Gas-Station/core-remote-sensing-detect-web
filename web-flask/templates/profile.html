@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <link rel="icon" href="/favicon.ico?v=2" sizes="32x32">
+    <link rel="icon" href="/static/favicon.png?v=2" type="image/png" sizes="32x32">
+    <title>个人中心 - 遥感影像目标检测系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.1/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.1/dist/index.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="/static/iconfont/iconfont.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/themes.css?v=9">
+    <link rel="stylesheet" href="/static/css/profile-page.css?v=13">
+    <style>
+        /* 账号安全 v13 — 绑定/更换分离，参考电商账号中心布局 */
+        .profile-page .uc-sec-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            background: var(--surface-muted, #f8f8f8);
+            border: 1px solid var(--card-border, #eee);
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .profile-page .uc-sec-status .label { color: var(--text-sub, #888); }
+        .profile-page .uc-sec-status .value { color: var(--text-main, #333); font-weight: 600; }
+        .profile-page .uc-sec-status .tag {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+        }
+        .profile-page .uc-sec-status .tag.ok {
+            color: #389e0d;
+            background: #f6ffed;
+            border-color: #b7eb8f;
+        }
+        .profile-page .uc-sec-status .tag.warn {
+            color: #d48806;
+            background: #fffbe6;
+            border-color: #ffe58f;
+        }
+        html[data-theme="dark"] .profile-page .uc-sec-status .tag.ok {
+            color: #95de64;
+            background: rgba(82, 196, 26, 0.12);
+            border-color: rgba(82, 196, 26, 0.35);
+        }
+        html[data-theme="dark"] .profile-page .uc-sec-status .tag.warn {
+            color: #e8c9a8;
+            background: rgba(212, 165, 116, 0.12);
+            border-color: rgba(212, 165, 116, 0.35);
+        }
+        .profile-page .uc-verify-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding-left: 108px;
+        }
+        .profile-page .uc-verify-tab {
+            box-sizing: border-box;
+            border: 1px solid var(--card-border, #ddd);
+            background: var(--surface-muted, #f5f5f5);
+            color: var(--text-sub, #666);
+            padding: 0 14px;
+            height: 32px;
+            line-height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: inherit;
+        }
+        .profile-page .uc-verify-tab:hover {
+            border-color: #e4393c;
+            color: #e4393c;
+        }
+        .profile-page .uc-verify-tab.active {
+            border-color: #e4393c;
+            background: #fff5f5;
+            color: #e4393c;
+            font-weight: 600;
+        }
+        html[data-theme="dark"] .profile-page .uc-verify-tab {
+            background: #2c2c2c;
+            border-color: #444;
+            color: #bbb;
+        }
+        html[data-theme="dark"] .profile-page .uc-verify-tab.active {
+            background: #3a2a2a;
+            border-color: #d4a574;
+            color: #e8c9a8;
+        }
+        .profile-page .uc-sec-subtitle {
+            margin: 0 0 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main, #333);
+        }
+        .profile-page .uc-sec-form { max-width: 560px; }
+        .profile-page .uc-sec-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .profile-page .uc-sec-row > label {
+            flex-shrink: 0;
+            width: 96px;
+            padding-top: 8px;
+            font-size: 13px;
+            color: var(--text-sub, #666);
+            text-align: right;
+        }
+        .profile-page .uc-sec-field {
+            flex: 1;
+            min-width: 0;
+            max-width: 420px;
+        }
+        .profile-page .uc-sec-row > .uc-sec-inline,
+        .profile-page .uc-sec-row > .uc-sec-field {
+            flex: 1;
+            min-width: 0;
+            max-width: 420px;
+        }
+        .profile-page .uc-sec-row .el-input { flex: 1; max-width: 320px; }
+        .profile-page .uc-sec-field > .el-input { max-width: none; width: 100%; }
+        .profile-page .uc-sec-inline {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+        .profile-page .uc-sec-inline .el-input {
+            flex: 1;
+            min-width: 160px;
+        }
+        .profile-page .uc-sec-hint {
+            margin: 6px 0 0;
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--text-sub, #999);
+        }
+        .profile-page .uc-sec-divider {
+            margin: 18px 0 14px;
+            padding-top: 14px;
+            border-top: 1px dashed var(--card-border, #e8e8e8);
+            font-size: 12px;
+            color: var(--text-sub, #999);
+        }
+        .profile-page .uc-sec-actions { margin-top: 8px; padding-left: 108px; }
+        .profile-page .btn-sms {
+            display: inline-block;
+            box-sizing: border-box;
+            border: 1px solid #e4393c;
+            background: #fff;
+            color: #e4393c;
+            padding: 0 14px;
+            min-width: 108px;
+            height: 32px;
+            line-height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            font-family: inherit;
+        }
+        .profile-page .btn-sms:hover {
+            background: #fff5f5;
+            border-color: #c81623;
+            color: #c81623;
+        }
+        .profile-page .btn-sms.is-cooling {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        .profile-page .btn-confirm {
+            display: inline-block;
+            box-sizing: border-box;
+            border: 1px solid #e4393c;
+            background: #e4393c;
+            color: #fff;
+            padding: 0 16px;
+            min-width: 88px;
+            height: 32px;
+            line-height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            font-family: inherit;
+        }
+        .profile-page .btn-confirm:hover {
+            background: #c81623;
+            border-color: #c81623;
+        }
+        html[data-theme="dark"] .profile-page .btn-sms {
+            background: #2c2c2c;
+            border-color: #d4a574;
+            color: #e8c9a8;
+        }
+        html[data-theme="dark"] .profile-page .btn-sms:hover {
+            background: #3a3a3a;
+            border-color: #e8c9a8;
+            color: #fff;
+        }
+        html[data-theme="dark"] .profile-page .btn-confirm {
+            background: #4a6fa5;
+            border-color: #4a6fa5;
+            color: #fff;
+        }
+        html[data-theme="dark"] .profile-page .btn-confirm:hover {
+            background: #5a82b8;
+            border-color: #5a82b8;
+        }
+        .profile-page .uc-card .bd { overflow: visible; }
+    </style>
+</head>
+<body>
+    <div id="app" class="uc-page profile-page">
+        <div v-if="serviceBad" class="uc-service-warn">
+            后端服务未就绪或版本过旧：{{ serviceBad }}。Python 版请用 <strong>http://127.0.0.1:5011</strong>，Java 版请用 <strong>http://127.0.0.1:5012</strong> 访问。
+        </div>
+
+        <div class="uc-topbar">
+            <a href="/detect.html"><i class="iconfont icon-weixing"></i> 遥感检测平台</a>
+            <a href="/detect.html" @click.prevent="goDetect">返回检测工作台</a>
+        </div>
+
+        <div class="uc-banner">
+            <div class="uc-banner-inner">
+                <div class="uc-avatar" @click="triggerAvatar">
+                    <img v-if="user.avatar" :src="user.avatar" alt="" />
+                    <span v-else>更换头像</span>
+                </div>
+                <div>
+                    <h1>{{ user.realName || user.username }}</h1>
+                    <div class="sub">账号：{{ user.username }} · 注册使用遥感智能检测服务</div>
+                    <div class="tags">
+                        <em v-if="user.phoneBound">手机已绑定</em>
+                        <em v-else>手机未绑定</em>
+                        <em v-if="user.emailBound">邮箱已绑定</em>
+                        <em v-else>邮箱未绑定</em>
+                        <em>{{ user.workUnit || '未填写工作单位' }}</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="uc-body">
+            <aside class="uc-side">
+                <div v-for="t in tabs" :key="t.key" class="menu-item" :class="{ active: tab === t.key }" @click="tab = t.key">
+                    {{ t.label }}
+                </div>
+            </aside>
+
+            <main class="uc-main">
+                <!-- 概览 -->
+                <template v-if="tab === 'overview'">
+                    <div class="uc-stats">
+                        <div class="uc-stat"><div class="n">{{ stats.reportCount || 0 }}</div><div class="t">历史检测报告</div></div>
+                        <div class="uc-stat"><div class="n">{{ stats.lastDetectTotal || 0 }}</div><div class="t">最近检测目标数</div></div>
+                        <div class="uc-stat"><div class="n">10</div><div class="t">支持物体类别</div></div>
+                        <div class="uc-stat"><div class="n">{{ securityScore }}</div><div class="t">账户安全分</div></div>
+                    </div>
+                    <div class="uc-info-grid">
+                        <div class="uc-card">
+                            <div class="hd">基本信息</div>
+                            <div class="bd uc-info-list">
+                                <p><span>姓名</span>{{ user.realName || user.username }}</p>
+                                <p><span>性别</span>{{ user.gender || '未填写' }}</p>
+                                <p><span>注册时间</span>{{ formatDate(user.createdAt) }}</p>
+                                <p><span>个人简介</span>{{ user.bio || '暂无简介' }}</p>
+                            </div>
+                        </div>
+                        <div class="uc-card">
+                            <div class="hd">工作信息</div>
+                            <div class="bd uc-info-list">
+                                <p><span>工作单位</span>{{ user.workUnit || '未填写' }}</p>
+                                <p><span>部门科室</span>{{ user.department || '未填写' }}</p>
+                            </div>
+                        </div>
+                        <div class="uc-card">
+                            <div class="hd">联系地址</div>
+                            <div class="bd uc-info-list">
+                                <p><span>所在地区</span>{{ user.region || '未填写' }}</p>
+                                <p><span>详细地址</span>{{ user.address || '未填写' }}</p>
+                                <p><span>邮政编码</span>{{ user.postalCode || '未填写' }}</p>
+                            </div>
+                        </div>
+                        <div class="uc-card">
+                            <div class="hd">账户绑定</div>
+                            <div class="bd uc-info-list">
+                                <p><span>手机号码</span>{{ user.phone || '未绑定' }}</p>
+                                <p><span>电子邮箱</span>{{ user.email || '未绑定' }}</p>
+                                <p v-if="stats.lastDetectAt"><span>最近检测</span>{{ stats.lastDetectAt }} · {{ stats.lastModel }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- 基本资料 -->
+                <div v-show="tab === 'profile'" class="uc-card">
+                    <div class="hd">基本资料</div>
+                    <div class="bd">
+                        <div class="uc-form-grid">
+                            <div><label>姓名</label><el-input v-model="form.realName" placeholder="请输入您的姓名"></el-input></div>
+                            <div><label>性别</label>
+                                <el-select v-model="form.gender" placeholder="请选择" style="width:100%;">
+                                    <el-option label="男" value="男"></el-option>
+                                    <el-option label="女" value="女"></el-option>
+                                    <el-option label="未填写" value=""></el-option>
+                                </el-select>
+                            </div>
+                            <div class="full"><label>个人简介</label><el-input v-model="form.bio" type="textarea" :rows="2"></el-input></div>
+                            <div><label>工作单位</label><el-input v-model="form.workUnit" placeholder="如：空间信息与测绘工程学院"></el-input></div>
+                            <div><label>部门 / 科室</label><el-input v-model="form.department" placeholder="如：遥感应用部"></el-input></div>
+                            <div><label>所在地区</label><el-input v-model="form.region" placeholder="省市区"></el-input></div>
+                            <div><label>邮政编码</label><el-input v-model="form.postalCode" placeholder="6位邮编"></el-input></div>
+                            <div class="full"><label>详细地址</label><el-input v-model="form.address" placeholder="街道、门牌号等"></el-input></div>
+                        </div>
+                        <el-button type="primary" style="margin-top:16px;" @click="saveProfile">保存资料</el-button>
+                    </div>
+                </div>
+
+                <!-- 账号安全 profile-security-v13 -->
+                <template v-if="tab === 'security'">
+                    <!-- 手机 -->
+                    <div class="uc-card">
+                        <div class="hd">手机号码</div>
+                        <div class="bd">
+                            <div class="uc-sec-status">
+                                <span class="label">当前状态</span>
+                                <span class="value">{{ user.phoneBound ? maskPhone(user.phone) : '未绑定手机' }}</span>
+                                <span class="tag" :class="user.phoneBound ? 'ok' : 'warn'">{{ user.phoneBound ? '已绑定' : '未绑定' }}</span>
+                            </div>
+                            <template v-if="!user.phoneBound">
+                                <p class="uc-sec-subtitle">绑定手机</p>
+                                <p class="uc-form-tip">绑定后可接收短信验证码，用于找回密码与安全验证。</p>
+                                <div class="uc-sec-form">
+                                    <div class="uc-sec-row">
+                                        <label>手机号</label>
+                                        <el-input v-model="phoneBindForm.phone" placeholder="请输入11位手机号" maxlength="11"></el-input>
+                                    </div>
+                                    <div class="uc-sec-row">
+                                        <label>短信验证码</label>
+                                        <div class="uc-sec-inline">
+                                            <el-input v-model="phoneBindForm.code" placeholder="请输入验证码" maxlength="6"></el-input>
+                                            <button type="button" class="btn-sms" :class="{ 'is-cooling': codeCdDisabled('phone_bind') }" @click="sendPhoneBindSms">{{ codeCdLabel('phone_bind') }}</button>
+                                        </div>
+                                    </div>
+                                    <div class="uc-sec-actions">
+                                        <button type="button" class="btn-confirm" @click="submitPhoneBind">确认绑定</button>
+                                    </div>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <p class="uc-sec-subtitle">更换手机号</p>
+                                <p class="uc-form-tip">请先选择一种方式验证身份，再填写新手机号。</p>
+                                <div class="uc-sec-form">
+                                    <div class="uc-verify-tabs">
+                                        <button type="button" class="uc-verify-tab" :class="{ active: phoneChangeVerifyMode === 'password' }" @click="setPhoneChangeVerifyMode('password')">登录密码</button>
+                                        <button type="button" class="uc-verify-tab" :class="{ active: phoneChangeVerifyMode === 'sms' }" @click="setPhoneChangeVerifyMode('sms')">原手机验证码</button>
+                                    </div>
+                                    <div class="uc-sec-row" v-if="phoneChangeVerifyMode === 'password'">
+                                        <label>登录密码</label>
+                                        <el-input v-model="phoneChangeForm.oldPassword" type="password" show-password></el-input>
+                                    </div>
+                                    <div class="uc-sec-row" v-if="phoneChangeVerifyMode === 'sms'">
+                                        <label>原手机验证码</label>
+                                        <div class="uc-sec-field">
+                                            <div class="uc-sec-inline">
+                                                <el-input v-model="phoneChangeForm.oldSmsCode" maxlength="6"></el-input>
+                                                <button type="button" class="btn-sms" :class="{ 'is-cooling': codeCdDisabled('phone_old') }" @click="sendOldPhoneSms">{{ codeCdLabel('phone_old') }}</button>
+                                            </div>
+                                            <p class="uc-sec-hint">验证码将发到当前绑定手机 {{ maskPhone(user.phone) }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="uc-sec-divider">填写新手机号</div>
+                                    <div class="uc-sec-row">
+                                        <label>新手机号</label>
+                                        <el-input v-model="phoneChangeForm.newPhone" placeholder="请输入新手机号" maxlength="11"></el-input>
+                                    </div>
+                                    <div class="uc-sec-row">
+                                        <label>新手机验证码</label>
+                                        <div class="uc-sec-inline">
+                                            <el-input v-model="phoneChangeForm.newCode" maxlength="6"></el-input>
+                                            <button type="button" class="btn-sms" :class="{ 'is-cooling': codeCdDisabled('phone_new') }" @click="sendNewPhoneSms">{{ codeCdLabel('phone_new') }}</button>
+                                        </div>
+                                    </div>
+                                    <div class="uc-sec-actions">
+                                        <button type="button" class="btn-confirm" @click="submitPhoneChange">确认更换</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- 邮箱 -->
+                    <div class="uc-card">
+                        <div class="hd">电子邮箱</div>
+                        <div class="bd">
+                            <div class="uc-sec-status">
+                                <span class="label">当前状态</span>
+                                <span class="value">{{ user.emailBound ? maskEmail(user.email) : '未绑定邮箱' }}</span>
+                                <span class="tag" :class="user.emailBound ? 'ok' : 'warn'">{{ user.emailBound ? '已绑定' : '未绑定' }}</span>
+                            </div>
+                            <template v-if="!user.emailBound">
+                                <p class="uc-sec-subtitle">绑定邮箱</p>
+                                <p class="uc-form-tip">绑定后可接收检测报告与邮箱验证码。</p>
+                                <div class="uc-sec-form">
+                                    <div class="uc-sec-row">
+                                        <label>邮箱地址</label>
+                                        <el-input v-model="emailBindForm.email" placeholder="name@example.com"></el-input>
+                                    </div>
+                                    <div class="uc-sec-row">
+                                        <label>邮箱验证码</label>
+                                        <div class="uc-sec-inline">
+                                            <el-input v-model="emailBindForm.code" placeholder="请输入验证码" maxlength="6"></el-input>
+                                            <button type="button" class="btn-sms" :class="{ 'is-cooling': codeCdDisabled('email_bind') }" @click="sendEmailBindCode">{{ codeCdLabel('email_bind') }}</button>
+                                        </div>
+                                    </div>
+                                    <div class="uc-sec-actions">
+                                        <button type="button" class="btn-confirm" @click="submitEmailBind">确认绑定</button>
+                                    </div>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <p class="uc-sec-subtitle">更换邮箱</p>
+                                <p class="uc-form-tip">请先选择一种方式验证身份，再填写新邮箱。</p>
+                                <div class="uc-sec-form">
+                                    <div class="uc-verify-tabs">
+                                        <button type="button" class="uc-verify-tab" :class="{ active: emailChangeVerifyMode === 'password' }" @click="setEmailChangeVerifyMode('password')">登录密码</button>
+                                        <button type="button" class="uc-verify-tab" :class="{ active: emailChangeVerifyMode === 'email' }" @click="setEmailChangeVerifyMode('email')">原邮箱验证码</button>
+                                    </div>
+                                    <div class="uc-sec-row" v-if="emailChangeVerifyMode === 'password'">
+                                        <label>登录密码</label>
+                                        <el-input v-model="emailChangeForm.oldPassword" type="password" show-password></el-input>
+                                    </div>
+                                    <div class="uc-sec-row" v-if="emailChangeVerifyMode === 'email'">
+                                        <label>原邮箱验证码</label>
+                                        <div class="uc-sec-field">
+                                            <div class="uc-sec-inline">
+                                                <el-input v-model="emailChangeForm.oldEmailCode" maxlength="6"></el-input>
+                                                <button type="button" class="btn-sms" :class="{ 'is-cooling': codeCdDisabled('email_old') }" @click.stop="sendOldEmailCode">{{ codeCdLabel('email_old') }}</button>
+                                            </div>
+                                            <p class="uc-sec-hint">验证码将发到当前绑定邮箱 {{ maskEmail(user.email) }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="uc-sec-divider">填写新邮箱</div>
+                                    <div class="uc-sec-row">
+                                        <label>新邮箱</label>
+                                        <el-input v-model="emailChangeForm.newEmail"></el-input>
+                                    </div>
+                                    <div class="uc-sec-row">
+                                        <label>新邮箱验证码</label>
+                                        <div class="uc-sec-field">
+                                            <div class="uc-sec-inline">
+                                                <el-input v-model="emailChangeForm.newCode" maxlength="6"></el-input>
+                                                <button type="button" class="btn-sms" :class="{ 'is-cooling': codeCdDisabled('email_new') }" @click.stop="sendNewEmailCode">{{ codeCdLabel('email_new') }}</button>
+                                            </div>
+                                            <p class="uc-sec-hint" v-if="emailChangeForm.newEmail">填写新邮箱后获取，验证码将发到 {{ emailChangeForm.newEmail }}</p>
+                                            <p class="uc-sec-hint" v-else>请先填写上方新邮箱，再获取验证码</p>
+                                        </div>
+                                    </div>
+                                    <div class="uc-sec-actions">
+                                        <button type="button" class="btn-confirm" @click="submitEmailChange">确认更换</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- 密码 -->
+                    <div class="uc-card">
+                        <div class="hd">登录密码</div>
+                        <div class="bd">
+                            <p class="uc-form-tip">修改密码前请先选择一种身份验证方式（5 分钟内有效）。</p>
+                            <div class="uc-sec-form">
+                                <div class="uc-verify-tabs">
+                                    <button type="button" class="uc-verify-tab" :class="{ active: pwdVerifyMode === 'password' }" @click="setPwdVerifyMode('password')">原密码</button>
+                                    <button type="button" class="uc-verify-tab" v-if="user.phoneBound" :class="{ active: pwdVerifyMode === 'sms' }" @click="setPwdVerifyMode('sms')">手机验证码</button>
+                                    <button type="button" class="uc-verify-tab" v-if="user.emailBound" :class="{ active: pwdVerifyMode === 'email' }" @click="setPwdVerifyMode('email')">邮箱验证码</button>
+                                </div>
+                                <div class="uc-sec-row" v-if="pwdVerifyMode === 'password'">
+                                    <label>原密码</label>
+                                    <el-input v-model="pwdForm.oldPassword" type="password" show-password></el-input>
+                                </div>
+                                <div class="uc-sec-row" v-if="pwdVerifyMode === 'sms' && user.phoneBound">
+                                    <label>手机验证码</label>
+                                    <div class="uc-sec-field">
+                                        <div class="uc-sec-inline">
+                                            <el-input v-model="pwdForm.smsCode" maxlength="6"></el-input>
+                                            <button type="button" class="btn-sms" :class="{ 'is-cooling': codeCdDisabled('pwd_phone') }" @click="sendPwdPhoneSms">{{ codeCdLabel('pwd_phone') }}</button>
+                                        </div>
+                                        <p class="uc-sec-hint">验证码将发到当前绑定手机 {{ maskPhone(user.phone) }}</p>
+                                    </div>
+                                </div>
+                                <div class="uc-sec-row" v-if="pwdVerifyMode === 'email' && user.emailBound">
+                                    <label>邮箱验证码</label>
+                                    <div class="uc-sec-field">
+                                        <div class="uc-sec-inline">
+                                            <el-input v-model="pwdForm.emailCode" maxlength="6"></el-input>
+                                            <button type="button" class="btn-sms" :class="{ 'is-cooling': codeCdDisabled('pwd_email') }" @click.stop="sendPwdEmailCode">{{ codeCdLabel('pwd_email') }}</button>
+                                        </div>
+                                        <p class="uc-sec-hint">验证码将发到当前绑定邮箱 {{ maskEmail(user.email) }}</p>
+                                    </div>
+                                </div>
+                                <div class="uc-sec-divider">设置新密码</div>
+                                <div class="uc-sec-row">
+                                    <label>新密码</label>
+                                    <el-input v-model="pwdForm.newPassword" type="password" placeholder="至少6位，不能与原密码相同" show-password></el-input>
+                                </div>
+                                <div class="uc-sec-row">
+                                    <label>确认新密码</label>
+                                    <el-input v-model="pwdForm.confirmPassword" type="password" placeholder="再次输入新密码" show-password></el-input>
+                                </div>
+                                <div class="uc-sec-actions">
+                                    <button type="button" class="btn-confirm" @click="changePassword">确认修改</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- 主题 -->
+                <div v-show="tab === 'theme'" class="uc-card">
+                    <div class="hd">界面主题</div>
+                    <div class="bd uc-theme-row">
+                        <el-radio-group v-model="form.theme" @change="applyTheme">
+                            <el-radio v-for="t in themes" :key="t.key" :label="t.key">{{ t.name }}</el-radio>
+                        </el-radio-group>
+                        <el-button type="primary" @click="saveProfile">保存主题</el-button>
+                    </div>
+                </div>
+
+                <!-- 地图 -->
+                <div v-show="tab === 'map'" class="uc-card">
+                    <div class="hd">在线遥感地图</div>
+                    <div class="bd"><div id="rsMap"></div></div>
+                </div>
+
+                <!-- 智能问答 -->
+                <div v-show="tab === 'chat'" class="uc-card">
+                    <div class="hd">智能问答助手</div>
+                    <div class="bd">
+                        <div class="llm-tip" v-if="llmInfo.member_auto_llm">会员用户已自动接入云端大模型（{{ llmInfo.model }}），无需单独配置 API Key。</div>
+                        <div class="llm-tip" v-else-if="llmInfo.configured">已连接云端大模型（{{ llmInfo.model }}），Key：{{ llmInfo.api_key_masked || '已配置' }}</div>
+                        <div class="llm-tip" v-else>当前为本地助手模式，可回答物体类别、上传流程、报告导出等问题。填写下方 API Key 即可接入 DeepSeek 等兼容接口。</div>
+                        <div class="llm-config-box" v-if="!llmInfo.is_member">
+                            <div class="uc-form-grid">
+                                <div class="full"><label>API 地址</label><el-input v-model="llmForm.apiUrl" placeholder="https://api.deepseek.com"></el-input></div>
+                                <div><label>API Key</label><el-input v-model="llmForm.apiKey" type="password" show-password placeholder="输入您的 Key，留空则保持已保存"></el-input></div>
+                                <div><label>模型名称</label><el-input v-model="llmForm.model" placeholder="deepseek-chat"></el-input></div>
+                            </div>
+                            <el-button type="primary" plain style="margin-top:12px;" @click="saveLlmConfig">保存并启用大模型</el-button>
+                        </div>
+                        <div class="uc-chat" ref="chatBox">
+                            <div v-for="(m, i) in chatHistory" :key="i" class="line" :class="m.role">
+                                <strong>{{ m.role === 'user' ? '我' : '助手' }}：</strong>{{ m.text }}
+                            </div>
+                        </div>
+                        <el-input v-model="chatInput" placeholder="输入问题，例如：系统能识别哪些物体？" @keyup.enter="sendChat"></el-input>
+                        <el-button type="primary" style="margin-top:8px;" :loading="chatLoading" @click="sendChat">发送</el-button>
+                    </div>
+                </div>
+
+                <!-- 资讯 -->
+                <div v-show="tab === 'news'" class="uc-card">
+                    <div class="hd">遥感行业资讯</div>
+                    <div class="bd">
+                        <div v-for="n in newsList" :key="n.id" style="padding:12px 0;border-bottom:1px solid #f0f0f0;">
+                            <div style="font-weight:600;font-size:14px;">{{ n.title }} <el-tag size="small">{{ n.tag }}</el-tag></div>
+                            <div style="font-size:12px;color:#666;margin-top:4px;">{{ n.summary }}</div>
+                            <div style="font-size:11px;color:#999;">{{ n.source }} · {{ n.date }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 报告 -->
+                <div v-show="tab === 'report'" class="uc-card">
+                    <div class="hd">检测报告</div>
+                    <div class="bd">
+                        <p v-if="lastDetect">最近检测 {{ lastDetect.total }} 个目标 · {{ lastDetect.modelName }}</p>
+                        <p v-else class="uc-muted">请先在检测台完成一次检测。</p>
+                        <div class="uc-report-actions">
+                            <el-button type="primary" plain @click="exportPdf">导出 PDF</el-button>
+                            <el-button plain @click="emailReport">发送到邮箱</el-button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="uc-rail">
+                <div class="uc-card">
+                    <div class="hd">常用服务</div>
+                    <div class="bd uc-rail-links">
+                        <a href="/detect.html">检测工作台</a>
+                        <a @click.prevent="tab = 'report'">检测报告</a>
+                        <a @click.prevent="tab = 'chat'">智能问答</a>
+                        <a @click.prevent="tab = 'map'">遥感地图</a>
+                        <a @click.prevent="tab = 'security'">账号安全</a>
+                    </div>
+                </div>
+                <div class="uc-card">
+                    <div class="hd">账户概况</div>
+                    <div class="bd uc-rail-summary">
+                        <p>手机 {{ user.phoneBound ? '已绑定' : '未绑定' }}</p>
+                        <p>邮箱 {{ user.emailBound ? '已绑定' : '未绑定' }}</p>
+                        <p>主题 {{ themeLabel }}</p>
+                        <p v-if="user.workUnit">单位 {{ user.workUnit }}</p>
+                    </div>
+                </div>
+                <div class="uc-card">
+                    <div class="hd">安全建议</div>
+                    <div class="bd uc-rail-tips">
+                        <p v-if="!user.phoneBound">建议绑定手机，便于找回密码与接收通知。</p>
+                        <p v-if="!user.emailBound">绑定邮箱后可接收 PDF 检测报告。</p>
+                        <p v-if="user.phoneBound && user.emailBound">账户安全状态良好，请定期修改密码。</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <input ref="avatarInput" type="file" accept="image/*" style="display:none" @change="onAvatarChange" />
+    </div>
+
+    <script src="/static/js/app-core.js?v=16"></script>
+    <script>
+        var mapInstance = null;
+
+        function bootProfileApp() {
+            if (!window.Vue || !window.ElementPlus) {
+                document.getElementById('app').innerHTML =
+                    '<div style="padding:24px;color:#c81623;">页面资源加载失败，请检查网络后刷新。</div>';
+                return;
+            }
+            var mountEl = document.getElementById('app');
+            if (!mountEl) return;
+            /* 必须用字符串模板：in-DOM 模式会丢弃 <template #append> 与 <button> 内文字 */
+            var pageTemplate = mountEl.innerHTML;
+            mountEl.innerHTML = '';
+            var ElMessage = ElementPlus.ElMessage;
+            Vue.createApp({
+            template: pageTemplate,
+            data: function () {
+                return {
+                    tab: 'overview',
+                    tabs: [
+                        { key: 'overview', label: '账户概览' },
+                        { key: 'profile', label: '基本资料' },
+                        { key: 'security', label: '账号安全' },
+                        { key: 'theme', label: '主题外观' },
+                        { key: 'map', label: '遥感地图' },
+                        { key: 'chat', label: '智能问答' },
+                        { key: 'news', label: '行业资讯' },
+                        { key: 'report', label: '检测报告' }
+                    ],
+                    user: {},
+                    stats: {},
+                    form: { realName: '', bio: '', theme: 'default', gender: '', workUnit: '', department: '', address: '', postalCode: '', region: '' },
+                    themes: [],
+                    phoneBindForm: { phone: '', code: '' },
+                    phoneChangeForm: { oldPassword: '', oldSmsCode: '', newPhone: '', newCode: '' },
+                    phoneChangeVerifyMode: 'password',
+                    emailBindForm: { email: '', code: '' },
+                    emailChangeForm: { oldPassword: '', oldEmailCode: '', newEmail: '', newCode: '' },
+                    emailChangeVerifyMode: 'password',
+                    pwdForm: { oldPassword: '', newPassword: '', confirmPassword: '', smsCode: '', emailCode: '' },
+                    pwdVerifyMode: 'password',
+                    chatInput: '',
+                    chatLoading: false,
+                    chatHistory: [{ role: 'bot', text: '您好，我是遥感检测助手，有什么可以帮您？' }],
+                    newsList: [],
+                    lastDetect: null,
+                    llmInfo: { configured: false, model: '', api_key_masked: '', is_member: false, member_auto_llm: false },
+                    llmForm: { apiUrl: 'https://api.deepseek.com', apiKey: '', model: 'deepseek-chat' },
+                    serviceBad: '',
+                    cdPulse: 0
+                };
+            },
+            computed: {
+                securityScore: function () {
+                    var s = 40;
+                    if (this.user.phoneBound) s += 30;
+                    if (this.user.emailBound) s += 20;
+                    if (this.user.workUnit) s += 5;
+                    if (this.user.address) s += 5;
+                    return s;
+                },
+                themeLabel: function () {
+                    var key = this.user.theme || 'default';
+                    for (var i = 0; i < this.themes.length; i++) {
+                        if (this.themes[i].key === key) return this.themes[i].name;
+                    }
+                    return '经典红';
+                }
+            },
+            watch: {
+                tab: function (v) { if (v === 'map') this.$nextTick(this.initMap); }
+            },
+            mounted: function () {
+                if (!UserSession.loggedIn()) { window.location.href = '/login.html'; return; }
+                var self = this;
+                AppApi.checkService().then(function (d) {
+                    var pdfOk = d.pdf_engine && (
+                        d.pdf_engine.indexOf('light-gradient-v') >= 0
+                        || d.pdf_engine.indexOf('openpdf-gradient-v') >= 0
+                    );
+                    var javaBackend = d.app_version && String(d.app_version).indexOf('java-spring') >= 0;
+                    if (!pdfOk && !javaBackend) {
+                        self.serviceBad = '检测到旧版后端（PDF 引擎 ' + (d.pdf_engine || '未知') + '），请重启后端服务';
+                    }
+                    if (!d.email_api && !javaBackend) {
+                        self.serviceBad = (self.serviceBad ? self.serviceBad + '；' : '') +
+                            '邮箱接口版本过旧，请重启后端服务';
+                    }
+                }).catch(function (e) {
+                    self.serviceBad = (e && e.message) || '无法连接 /api/health';
+                });
+                this.lastDetect = UserSession.readLastDetect();
+                this.loadProfile();
+                this.loadNews();
+                this.loadLlmStatus();
+                this.loadLlmConfig();
+                this._cdPulseTimer = setInterval(function () {
+                    self.cdPulse = Date.now();
+                }, 1000);
+            },
+            methods: {
+                goDetect: function () {
+                    window.location.href = '/detect.html';
+                },
+                formatDate: function (v) {
+                    if (!v) return '—';
+                    return String(v).replace('T', ' ').slice(0, 16);
+                },
+                maskPhone: function (phone) {
+                    phone = String(phone || '');
+                    if (phone.length < 7) return phone || '—';
+                    return phone.slice(0, 3) + '****' + phone.slice(-4);
+                },
+                maskEmail: function (email) {
+                    email = String(email || '');
+                    var at = email.indexOf('@');
+                    if (at < 1) return email || '—';
+                    var name = email.slice(0, at);
+                    var domain = email.slice(at);
+                    if (name.length <= 2) return name[0] + '***' + domain;
+                    return name.slice(0, 2) + '***' + name.slice(-1) + domain;
+                },
+                resetPhoneBindForm: function () {
+                    this.phoneBindForm = { phone: '', code: '' };
+                },
+                resetPhoneChangeForm: function () {
+                    this.phoneChangeForm = { oldPassword: '', oldSmsCode: '', newPhone: '', newCode: '' };
+                    this.phoneChangeVerifyMode = 'password';
+                },
+                resetEmailBindForm: function () {
+                    this.emailBindForm = { email: '', code: '' };
+                },
+                resetEmailChangeForm: function () {
+                    this.emailChangeForm = { oldPassword: '', oldEmailCode: '', newEmail: '', newCode: '' };
+                    this.emailChangeVerifyMode = 'password';
+                },
+                resetPwdForm: function () {
+                    this.pwdForm = { oldPassword: '', newPassword: '', confirmPassword: '', smsCode: '', emailCode: '' };
+                    this.syncPwdVerifyMode();
+                },
+                syncPwdVerifyMode: function () {
+                    if (this.pwdVerifyMode === 'sms' && !this.user.phoneBound) {
+                        this.pwdVerifyMode = this.user.emailBound ? 'email' : 'password';
+                    }
+                    if (this.pwdVerifyMode === 'email' && !this.user.emailBound) {
+                        this.pwdVerifyMode = this.user.phoneBound ? 'sms' : 'password';
+                    }
+                },
+                setPhoneChangeVerifyMode: function (mode) {
+                    this.phoneChangeVerifyMode = mode;
+                    this.phoneChangeForm.oldPassword = '';
+                    this.phoneChangeForm.oldSmsCode = '';
+                },
+                setEmailChangeVerifyMode: function (mode) {
+                    this.emailChangeVerifyMode = mode;
+                    this.emailChangeForm.oldPassword = '';
+                    this.emailChangeForm.oldEmailCode = '';
+                },
+                setPwdVerifyMode: function (mode) {
+                    this.pwdVerifyMode = mode;
+                    this.pwdForm.oldPassword = '';
+                    this.pwdForm.smsCode = '';
+                    this.pwdForm.emailCode = '';
+                },
+                scrollChat: function () {
+                    var self = this;
+                    self.$nextTick(function () {
+                        var el = self.$refs.chatBox;
+                        if (el) el.scrollTop = el.scrollHeight;
+                    });
+                },
+                loadProfile: function () {
+                    var self = this;
+                    AppApi.fetchJson(AppApi.paths.profile).then(function (d) {
+                        if (d.code === 401) {
+                            UserSession.clear();
+                            window.location.href = '/login.html';
+                            return;
+                        }
+                        if (d.code !== 200) {
+                            ElMessage.error(d.message || '加载资料失败');
+                            return;
+                        }
+                        self.user = d.data.user;
+                        self.stats = d.data.stats || {};
+                        self.themes = d.data.themes || [];
+                        UserSession.save(self.user);
+                        self.form.realName = self.user.realName;
+                        self.form.bio = self.user.bio || '';
+                        self.form.theme = self.user.theme || 'default';
+                        self.form.gender = self.user.gender || '';
+                        self.form.workUnit = self.user.workUnit || '';
+                        self.form.department = self.user.department || '';
+                        self.form.address = self.user.address || '';
+                        self.form.postalCode = self.user.postalCode || '';
+                        self.form.region = self.user.region || '';
+                        self.emailForm.email = self.user.email || '';
+                        self.syncPwdVerifyMode();
+                        ThemeManager.apply(self.form.theme);
+                    });
+                },
+                loadLlmStatus: function () {
+                    var self = this;
+                    AppApi.fetchJson(AppApi.paths.llmStatus + '?username=' + encodeURIComponent(UserSession.username() || '')).then(function (d) {
+                        if (d.code === 200) self.llmInfo = d.data;
+                    });
+                },
+                loadLlmConfig: function () {
+                    var self = this;
+                    AppApi.fetchJson(AppApi.paths.llmConfig).then(function (d) {
+                        if (d.code !== 200) return;
+                        self.llmForm.apiUrl = d.data.api_url || 'https://api.deepseek.com';
+                        self.llmForm.model = d.data.model || 'deepseek-chat';
+                        self.llmForm.apiKey = '';
+                        self.llmInfo.is_member = d.data.is_member;
+                        self.llmInfo.member_auto_llm = d.data.member_auto_llm;
+                        if (d.data.configured) {
+                            self.llmInfo.configured = true;
+                            self.llmInfo.model = d.data.model;
+                            self.llmInfo.api_key_masked = d.data.api_key_masked;
+                        }
+                    });
+                },
+                saveLlmConfig: function () {
+                    var self = this;
+                    if (!self.llmForm.apiKey && !self.llmInfo.configured) {
+                        ElMessage.warning('请先填写 API Key');
+                        return;
+                    }
+                    AppApi.fetchJson(AppApi.paths.llmConfig, {
+                        method: 'POST',
+                        body: {
+                            apiUrl: self.llmForm.apiUrl,
+                            apiKey: self.llmForm.apiKey,
+                            model: self.llmForm.model,
+                            username: UserSession.username()
+                        }
+                    }).then(function (d) {
+                        if (d.code === 200) {
+                            if (d.data) self.llmInfo = d.data;
+                            else self.loadLlmStatus();
+                            self.llmForm.apiKey = '';
+                            if (d.test_ok !== false) {
+                                ElMessage.success(d.message || '已保存并启用');
+                            } else {
+                                ElMessage.warning(d.message || '已保存，但连接测试未通过');
+                            }
+                        } else {
+                            ElMessage.error(d.message || '保存失败');
+                            if (d.data) self.llmInfo = d.data;
+                        }
+                    }).catch(function (e) {
+                        ElMessage.error((e && e.message) || '请求失败，请确认服务已启动');
+                    });
+                },
+                saveProfile: function () {
+                    var self = this;
+                    AppApi.fetchJson(AppApi.paths.profile, { method: 'PUT', body: self.form }).then(function (d) {
+                        if (d.code === 200) {
+                            self.user = d.data.user;
+                            UserSession.save(self.user);
+                            ElMessage.success('已保存');
+                        } else ElMessage.error(d.message);
+                    });
+                },
+                applyTheme: function () { ThemeManager.apply(this.form.theme); },
+                codeCdRemaining: function (key) {
+                    this.cdPulse;
+                    return CodeCooldown.remain(key);
+                },
+                codeCdDisabled: function (key) {
+                    return CodeCooldown.disabled(key);
+                },
+                codeCdLabel: function (key) {
+                    this.cdPulse;
+                    return CodeCooldown.label(key);
+                },
+                onCodeSendResult: function (key, d) {
+                    CodeCooldown.applyResponse(key, d);
+                    this.cdPulse = Date.now();
+                },
+                sendSmsTo: function (opts) {
+                    var self = this;
+                    var cdKey = opts.cdKey;
+                    if (self.codeCdDisabled(cdKey)) {
+                        ElMessage.warning('请 ' + self.codeCdRemaining(cdKey) + ' 秒后再试');
+                        return;
+                    }
+                    var body = { purpose: opts.purpose, scene: opts.scene };
+                    var uname = UserSession.username();
+                    if (uname) body.username = uname;
+                    if (opts.scene === 'identity') {
+                        if (!self.user.phoneBound) {
+                            ElMessage.warning('当前账号未绑定手机');
+                            return;
+                        }
+                    } else {
+                        body.phone = opts.phone;
+                        if (!body.phone) {
+                            ElMessage.warning('请填写手机号');
+                            return;
+                        }
+                    }
+                    AppApi.fetchJson(AppApi.paths.smsSend, { method: 'POST', body: body })
+                        .then(function (d) {
+                            self.onCodeSendResult(cdKey, d);
+                            if (d.code === 200) ElMessage.success(d.message);
+                            else ElMessage.error(d.message || '发送失败');
+                        })
+                        .catch(function (e) { ElMessage.error((e && e.message) || '发送验证码失败'); });
+                },
+                isValidEmail: function (email) {
+                    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').trim());
+                },
+                showEmailCodeMessage: function (d) {
+                    var code = Number(d && d.code);
+                    var msg = (d && d.message) || '';
+                    if (code === 200) {
+                        ElMessage.success(msg || '验证码已发送');
+                        return;
+                    }
+                    if (code === 429) {
+                        ElMessage.warning(msg || '发送过于频繁，请稍后再试');
+                        return;
+                    }
+                    ElMessage.error(msg || '发送失败');
+                },
+                sendBoundEmailCode: function (cdKey, purpose) {
+                    var self = this;
+                    if (self.codeCdDisabled(cdKey)) {
+                        var left = self.codeCdRemaining(cdKey);
+                        if (left > 0) {
+                            ElMessage.warning('请 ' + left + ' 秒后再试');
+                        }
+                        return;
+                    }
+                    var boundEmail = (self.user.email || (UserSession.read() && UserSession.read().email) || '').trim();
+                    if (!boundEmail) {
+                        ElMessage.warning('当前账号未绑定邮箱');
+                        return;
+                    }
+                    self.cdPulse = Date.now();
+                    AppApi.postBoundEmailCode(purpose || 'identity', cdKey)
+                        .then(function (d) {
+                            self.onCodeSendResult(cdKey, d);
+                            self.showEmailCodeMessage(d);
+                        })
+                        .catch(function (e) { ElMessage.error((e && e.message) || '发送验证码失败'); })
+                        .finally(function () {
+                            self.cdPulse = Date.now();
+                        });
+                },
+                sendEmailTo: function (opts) {
+                    var self = this;
+                    var cdKey = opts.cdKey;
+                    if (self.codeCdDisabled(cdKey)) {
+                        var left = self.codeCdRemaining(cdKey);
+                        if (left > 0) {
+                            ElMessage.warning('请 ' + left + ' 秒后再试');
+                        }
+                        return;
+                    }
+                    var email = (opts.email || '').trim();
+                    if (!email) {
+                        ElMessage.warning('请填写新邮箱');
+                        return;
+                    }
+                    if (!self.isValidEmail(email)) {
+                        ElMessage.warning('请输入有效的新邮箱');
+                        return;
+                    }
+                    if (self.user.emailBound && email.toLowerCase() === (self.user.email || '').trim().toLowerCase()) {
+                        ElMessage.warning('新邮箱不能与当前绑定邮箱相同');
+                        return;
+                    }
+                    self.cdPulse = Date.now();
+                    AppApi.postNewEmailCode(email, opts.purpose || 'bind', cdKey)
+                        .then(function (d) {
+                            self.onCodeSendResult(cdKey, d);
+                            self.showEmailCodeMessage(d);
+                        })
+                        .catch(function (e) { ElMessage.error((e && e.message) || '发送验证码失败'); })
+                        .finally(function () {
+                            self.cdPulse = Date.now();
+                        });
+                },
+                sendPhoneBindSms: function () {
+                    this.sendSmsTo({
+                        cdKey: 'phone_bind',
+                        scene: 'new',
+                        phone: this.phoneBindForm.phone,
+                        purpose: 'bind'
+                    });
+                },
+                sendOldPhoneSms: function () {
+                    this.sendSmsTo({ cdKey: 'phone_old', scene: 'identity', purpose: 'reset' });
+                },
+                sendNewPhoneSms: function () {
+                    this.sendSmsTo({
+                        cdKey: 'phone_new',
+                        scene: 'new',
+                        phone: this.phoneChangeForm.newPhone,
+                        purpose: 'bind'
+                    });
+                },
+                sendEmailBindCode: function () {
+                    this.sendEmailTo({
+                        cdKey: 'email_bind',
+                        email: this.emailBindForm.email,
+                        purpose: 'bind'
+                    });
+                },
+                sendOldEmailCode: function () {
+                    this.sendBoundEmailCode('email_old', 'identity');
+                },
+                sendNewEmailCode: function () {
+                    if (!this.emailChangeForm.newEmail || !this.emailChangeForm.newEmail.trim()) {
+                        ElMessage.warning('请先填写新邮箱');
+                        return;
+                    }
+                    this.sendEmailTo({
+                        cdKey: 'email_new',
+                        email: this.emailChangeForm.newEmail,
+                        purpose: 'bind'
+                    });
+                },
+                sendPwdPhoneSms: function () {
+                    this.sendSmsTo({ cdKey: 'pwd_phone', scene: 'identity', purpose: 'reset' });
+                },
+                sendPwdEmailCode: function () {
+                    this.sendBoundEmailCode('pwd_email', 'reset');
+                },
+                submitPhoneBind: function () {
+                    var self = this;
+                    if (!self.phoneBindForm.phone || !self.phoneBindForm.code) {
+                        ElMessage.warning('请填写手机号和验证码');
+                        return;
+                    }
+                    AppApi.fetchJson(AppApi.paths.bindPhone, {
+                        method: 'POST',
+                        body: { phone: self.phoneBindForm.phone, smsCode: self.phoneBindForm.code }
+                    }).then(function (d) {
+                        if (d.code === 200) {
+                            self.user = d.data.user;
+                            UserSession.save(self.user);
+                            self.resetPhoneBindForm();
+                            ElMessage.success('手机绑定成功');
+                        } else ElMessage.error(d.message);
+                    }).catch(function (e) { ElMessage.error((e && e.message) || '绑定失败'); });
+                },
+                submitPhoneChange: function () {
+                    var self = this;
+                    var f = self.phoneChangeForm;
+                    if (!f.newPhone || !f.newCode) {
+                        ElMessage.warning('请填写新手机号和新手机验证码');
+                        return;
+                    }
+                    var body = { phone: f.newPhone, smsCode: f.newCode };
+                    if (self.phoneChangeVerifyMode === 'password') {
+                        if (!f.oldPassword) {
+                            ElMessage.warning('请填写登录密码');
+                            return;
+                        }
+                        body.oldPassword = f.oldPassword;
+                    } else {
+                        if (!f.oldSmsCode) {
+                            ElMessage.warning('请填写原手机验证码');
+                            return;
+                        }
+                        body.oldSmsCode = f.oldSmsCode;
+                    }
+                    AppApi.fetchJson(AppApi.paths.bindPhone, {
+                        method: 'POST',
+                        body: body
+                    }).then(function (d) {
+                        if (d.code === 200) {
+                            self.user = d.data.user;
+                            UserSession.save(self.user);
+                            self.resetPhoneChangeForm();
+                            ElMessage.success('手机号更换成功');
+                        } else ElMessage.error(d.message);
+                    }).catch(function (e) { ElMessage.error((e && e.message) || '更换失败'); });
+                },
+                submitEmailBind: function () {
+                    var self = this;
+                    if (!self.emailBindForm.email || !self.emailBindForm.code) {
+                        ElMessage.warning('请填写邮箱和验证码');
+                        return;
+                    }
+                    AppApi.fetchJson(AppApi.paths.bindEmail, {
+                        method: 'POST',
+                        body: { email: self.emailBindForm.email, emailCode: self.emailBindForm.code }
+                    }).then(function (d) {
+                        if (d.code === 200) {
+                            self.user = d.data.user;
+                            UserSession.save(self.user);
+                            self.resetEmailBindForm();
+                            ElMessage.success('邮箱绑定成功');
+                        } else ElMessage.error(d.message);
+                    }).catch(function (e) { ElMessage.error((e && e.message) || '绑定失败'); });
+                },
+                submitEmailChange: function () {
+                    var self = this;
+                    var f = self.emailChangeForm;
+                    if (!f.newEmail || !f.newCode) {
+                        ElMessage.warning('请填写新邮箱和新邮箱验证码');
+                        return;
+                    }
+                    if (!self.isValidEmail(f.newEmail)) {
+                        ElMessage.warning('请输入有效的新邮箱');
+                        return;
+                    }
+                    if (f.newEmail.trim().toLowerCase() === (self.user.email || '').trim().toLowerCase()) {
+                        ElMessage.warning('新邮箱不能与当前绑定邮箱相同');
+                        return;
+                    }
+                    var body = {
+                        email: f.newEmail,
+                        emailCode: f.newCode
+                    };
+                    if (self.emailChangeVerifyMode === 'password') {
+                        if (!f.oldPassword) {
+                            ElMessage.warning('请填写登录密码');
+                            return;
+                        }
+                        body.oldPassword = f.oldPassword;
+                    } else {
+                        if (!f.oldEmailCode) {
+                            ElMessage.warning('请填写原邮箱验证码');
+                            return;
+                        }
+                        body.oldEmailCode = f.oldEmailCode;
+                    }
+                    AppApi.fetchJson(AppApi.paths.bindEmail, {
+                        method: 'POST',
+                        body: body
+                    }).then(function (d) {
+                        if (d.code === 200) {
+                            self.user = d.data.user;
+                            UserSession.save(self.user);
+                            self.resetEmailChangeForm();
+                            ElMessage.success('邮箱更换成功');
+                        } else ElMessage.error(d.message);
+                    }).catch(function (e) { ElMessage.error((e && e.message) || '更换失败'); });
+                },
+                changePassword: function () {
+                    var self = this;
+                    var f = self.pwdForm;
+                    if (!f.newPassword || !f.confirmPassword) {
+                        ElMessage.warning('请填写新密码并确认');
+                        return;
+                    }
+                    if (f.newPassword !== f.confirmPassword) {
+                        ElMessage.warning('两次输入的新密码不一致');
+                        return;
+                    }
+                    var body = { newPassword: f.newPassword };
+                    if (self.pwdVerifyMode === 'password') {
+                        if (!f.oldPassword) {
+                            ElMessage.warning('请填写原密码');
+                            return;
+                        }
+                        body.oldPassword = f.oldPassword;
+                    } else if (self.pwdVerifyMode === 'sms') {
+                        if (!f.smsCode) {
+                            ElMessage.warning('请填写手机验证码');
+                            return;
+                        }
+                        body.smsCode = f.smsCode;
+                    } else {
+                        if (!f.emailCode) {
+                            ElMessage.warning('请填写邮箱验证码');
+                            return;
+                        }
+                        body.emailCode = f.emailCode;
+                    }
+                    AppApi.fetchJson(AppApi.paths.passwordChange, {
+                        method: 'POST',
+                        body: body
+                    }).then(function (d) {
+                        if (d.code === 200) {
+                            self.resetPwdForm();
+                            ElMessage.success('密码已修改');
+                        } else ElMessage.error(d.message);
+                    }).catch(function (e) { ElMessage.error((e && e.message) || '修改失败'); });
+                },
+                triggerAvatar: function () { this.$refs.avatarInput.click(); },
+                onAvatarChange: function (e) {
+                    var self = this, file = e.target.files[0];
+                    if (!file) return;
+                    var reader = new FileReader();
+                    reader.onload = function (ev) {
+                        AppApi.fetchJson(AppApi.paths.avatar, { method: 'POST', body: { image: ev.target.result } }).then(function (d) {
+                            if (d.code === 200) { self.user = d.data.user; UserSession.save(self.user); ElMessage.success('头像已更新'); }
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                },
+                initMap: function () {
+                    if (mapInstance) return;
+                    var el = document.getElementById('rsMap');
+                    if (!el) return;
+                    var self = this;
+                    function runMap() {
+                        if (!window.L) return;
+                        mapInstance = L.map('rsMap').setView([31.23, 121.47], 10);
+                        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(mapInstance);
+                    }
+                    if (window.L) {
+                        runMap();
+                    } else {
+                        var s = document.createElement('script');
+                        s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                        s.onload = runMap;
+                        document.head.appendChild(s);
+                    }
+                },
+                sendChat: function () {
+                    var self = this, q = (self.chatInput || '').trim();
+                    if (!q) return;
+                    self.chatHistory.push({ role: 'user', text: q });
+                    self.chatInput = '';
+                    self.chatLoading = true;
+                    self.scrollChat();
+                    var history = self.chatHistory.slice(0, -1).slice(-10);
+                    AppApi.fetchJson(AppApi.paths.llmChat, {
+                        method: 'POST',
+                        body: { question: q, history: history, username: UserSession.username() }
+                    })
+                        .then(function (d) {
+                            if (d.code === 200) self.chatHistory.push({ role: 'bot', text: d.data.answer });
+                            else self.chatHistory.push({ role: 'bot', text: d.message || '请求失败' });
+                        })
+                        .catch(function () { self.chatHistory.push({ role: 'bot', text: '网络异常，请稍后重试' }); })
+                        .finally(function () { self.chatLoading = false; self.scrollChat(); });
+                },
+                loadNews: function () {
+                    var self = this;
+                    fetch(AppApi.url(AppApi.paths.news)).then(function (r) { return r.json(); }).then(function (d) {
+                        if (d.code === 200) self.newsList = d.data.items || [];
+                    });
+                },
+                exportPdf: function () {
+                    if (!this.lastDetect) { ElMessage.warning('暂无检测记录'); return; }
+                    var payload = {
+                        modelName: this.lastDetect.modelName || '',
+                        detections: this.lastDetect.detections || [],
+                        total: this.lastDetect.total || 0,
+                        message: this.lastDetect.message || '',
+                        username: UserSession.username()
+                    };
+                    AppApi.downloadPdf(AppApi.paths.reportPdf, payload)
+                        .then(function (blob) {
+                            var a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = 'detection_report_' + Date.now() + '.pdf';
+                            a.click();
+                            ElMessage.success('PDF 已导出（新版表格报告）');
+                        })
+                        .catch(function (e) { ElMessage.error(e.message || '导出失败'); });
+                },
+                emailReport: function () {
+                    if (!this.lastDetect) { ElMessage.warning('暂无检测记录'); return; }
+                    AppApi.fetchJson(AppApi.paths.reportEmail, { method: 'POST', body: this.lastDetect }).then(function (d) {
+                        if (d.code === 200) ElMessage.success(d.message);
+                        else ElMessage.warning(d.message);
+                    });
+                }
+            }
+            }).use(ElementPlus).mount(mountEl);
+        }
+
+        try {
+            bootProfileApp();
+        } catch (err) {
+            document.getElementById('app').innerHTML =
+                '<div style="padding:24px;color:#c81623;">个人中心加载失败：' + (err.message || err) + '</div>';
+        }
+    </script>
+</body>
+</html>

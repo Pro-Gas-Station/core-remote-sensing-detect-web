@@ -1,0 +1,12 @@
+{
+  "access_key_id": "在此填写 AccessKeyId",
+  "access_key_secret": "在此填写 AccessKeySecret",
+  "sign_name": "短信签名",
+  "template_code": "短信模板编号",
+  "scheme_name": "",
+  "region_id": "cn-hangzhou",
+  "code_length": 6,
+  "valid_time": 300,
+  "code_type": 1,
+  "_说明": "复制为 sms_config.json 后填写。未配置时开发模式会在控制台打印验证码。"
+}

@@ -1,0 +1,39 @@
+/* iconfont 图标字体 — 本地托管，登录页专用 */
+@font-face {
+    font-family: "iconfont";
+    src: url("iconfont.woff2") format("woff2");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+.iconfont {
+    font-family: "iconfont" !important;
+    font-size: 16px;
+    font-style: normal;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 遥感 / 品牌 */
+.icon-weixing:before { content: "\f7bf"; }
+.icon-ditu:before { content: "\f279"; }
+
+/* 用户 / 登录 */
+.icon-yonghu:before { content: "\f007"; }
+.icon-mima:before { content: "\f023"; }
+.icon-denglu:before { content: "\f2f6"; }
+.icon-zhuce:before { content: "\f234"; }
+.icon-xingming:before { content: "\f2c2"; }
+
+/* 功能 */
+.icon-shangchuan:before { content: "\f093"; }
+.icon-mubiao:before { content: "\f05b"; }
+.icon-shuju:before { content: "\f201"; }
+.icon-anquan:before { content: "\f132"; }
+
+/* 通用 */
+.icon-bangzhu:before { content: "\f059"; }
+.icon-youjian:before { content: "\f0e0"; }
+.icon-jiantou:before { content: "\f061"; }

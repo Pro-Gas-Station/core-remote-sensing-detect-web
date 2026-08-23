@@ -1,0 +1,5 @@
+{
+  "api_url": "https://api.deepseek.com",
+  "api_key": "在此填写会员专用 API Key",
+  "model": "deepseek-chat"
+}
