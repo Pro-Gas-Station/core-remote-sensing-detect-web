@@ -42,6 +42,7 @@ _flatten_repo.py
 _flatten_repo.ps1
 _flatten_log.txt
 _git_status.py
+_git_commit_push.py
 
 # 用户上传与运行时生成
 web-flask/templates/images/uploads/
